@@ -9,15 +9,14 @@ import AdminDashboard from "@/components/dashboard/AdminDashboard";
 export default function Page() {
   const { data: session, status } = useSession();
 
-  // 1. Стан завантаження
   if (status === "loading") return <Loader />;
-
-  // 2. Стан неавторизованого користувача
   if (!session) return <AuthScreen />;
 
-  // 3. Перевірка ролі (припускаємо, що поле role є в сесії)
-  // Для тестування можна вручну змінити умову
-  const isAdmin = session.user?.email === "твій-email@gmail.com";
+  // Перевірка в консолі (натисни F12 в браузері, щоб побачити)
+  console.log("Пошта сесії:", session.user?.email);
+  console.log("Пошта з ENV:", process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+
+  const isAdmin = session.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   return isAdmin ? (
     <AdminDashboard session={session} />
