@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import type { Session } from "next-auth";
@@ -15,6 +18,7 @@ import {
   DollarSign,
   Check,
   X,
+  Phone,
 } from "lucide-react";
 
 interface StatCardProps {
@@ -24,10 +28,12 @@ interface StatCardProps {
   sub?: string;
 }
 
-interface AppointmentRowProps {
+interface Booking {
+  id: string;
   time: string;
   service: string;
   name: string;
+  phone: string;
   status: "Confirmed" | "Pending";
 }
 
@@ -61,19 +67,25 @@ function StatCard({ icon, label, val, sub }: StatCardProps) {
   );
 }
 
-function AppointmentRow({ time, service, name, status }: AppointmentRowProps) {
+function AppointmentRow({ time, service, name, phone, status }: Booking) {
   return (
     <div className="flex items-center justify-between p-4 bg-white/40 rounded-3xl border border-white/50 hover:bg-white/60 transition-all cursor-default">
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center flex-1">
         <span className="text-xs font-bold text-slate-400 w-16">{time}</span>
         <div className="w-2 h-2 bg-rose-300 rounded-full" />
-        <div>
-          <p className="text-sm font-bold text-slate-700">{service}</p>
-          <p className="text-[10px] text-slate-500">{name}</p>
+        <div className="grid grid-cols-2 flex-1 items-center gap-4">
+          <div>
+            <p className="text-sm font-bold text-slate-700">{service}</p>
+            <p className="text-[10px] text-slate-500">{name}</p>
+          </div>
+          <div className="flex items-center gap-2 text-slate-400">
+            <Phone size={14} />
+            <span className="text-[11px] font-bold">{phone}</span>
+          </div>
         </div>
       </div>
       <span
-        className={`text-[10px] px-3 py-1 rounded-full font-bold ${
+        className={`text-[10px] px-3 py-1 rounded-full font-bold ml-4 ${
           status === "Confirmed"
             ? "bg-green-100 text-green-600"
             : "bg-amber-100 text-amber-600"
@@ -90,7 +102,7 @@ function ArtistCard({ name, rate, rating }: ArtistCardProps) {
     <div className="flex items-center justify-between p-4 bg-white/40 rounded-3xl border border-white/50">
       <div className="flex gap-3 items-center">
         <div className="w-10 h-10 bg-rose-200 rounded-2xl overflow-hidden relative">
-          <div className="absolute inset-0 flex items-center justify-center text-rose-500 font-bold text-xs">
+          <div className="absolute inset-0 flex items-center justify-center text-rose-500 font-bold text-xs uppercase">
             {name[0]}
           </div>
         </div>
@@ -112,7 +124,7 @@ function RequestCard({ name, time }: RequestCardProps) {
     <div className="p-4 bg-white/40 rounded-3xl border border-white/50">
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-3 items-center">
-          <div className="w-10 h-10 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-400 font-bold">
+          <div className="w-10 h-10 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-400 font-bold uppercase">
             {name[0]}
           </div>
           <div>
@@ -134,7 +146,26 @@ function RequestCard({ name, time }: RequestCardProps) {
 }
 
 export default function AdminDashboard({ session }: { session: Session }) {
-  const adminName = "Anastasia";
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const adminName = session.user?.name || "Anastasia";
+
+  useEffect(() => {
+    async function fetchBookings() {
+      try {
+        const res = await fetch("/api/bookings");
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBookings();
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#FFF0F3] overflow-hidden font-sans text-slate-800 animate-in fade-in duration-500">
@@ -160,8 +191,8 @@ export default function AdminDashboard({ session }: { session: Session }) {
                   className="rounded-full border-2 border-white shadow-md"
                 />
               ) : (
-                <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center text-rose-500 text-2xl font-bold">
-                  A
+                <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center text-rose-500 text-2xl font-bold uppercase">
+                  {adminName[0]}
                 </div>
               )}
             </div>
@@ -182,7 +213,6 @@ export default function AdminDashboard({ session }: { session: Session }) {
               },
               { name: "Appointments", icon: <CalendarDays size={18} /> },
               { name: "Client Management", icon: <Users size={18} /> },
-              { name: "Services", icon: <Scissors size={18} /> },
               { name: "Settings", icon: <Settings size={18} /> },
             ].map((item) => (
               <button
@@ -239,7 +269,7 @@ export default function AdminDashboard({ session }: { session: Session }) {
             <StatCard
               icon={<CalendarDays className="text-rose-400" />}
               label="Today's Appointments"
-              val="15"
+              val={bookings.length.toString()}
             />
             <StatCard
               icon={<UserPlus className="text-rose-400" />}
@@ -266,29 +296,33 @@ export default function AdminDashboard({ session }: { session: Session }) {
                   <h3 className="font-black text-xl text-slate-700">
                     Today Appointments
                   </h3>
-                  <button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-black px-6 py-3 rounded-2xl shadow-lg shadow-rose-100 transition-all active:scale-95">
-                    + Add Appointment
-                  </button>
+                  <div className="flex gap-4 border-b border-rose-100 pb-2">
+                    <button className="text-sm font-black text-slate-700 border-b-2 border-rose-400">
+                      Schedule
+                    </button>
+                    <button className="text-sm font-bold text-slate-300 hover:text-slate-500">
+                      Clients
+                    </button>
+                    <button className="text-sm font-bold text-slate-300 hover:text-slate-500">
+                      Requests
+                    </button>
+                  </div>
                 </div>
+
                 <div className="space-y-4">
-                  <AppointmentRow
-                    time="10:00 AM"
-                    service="Gel Manicure"
-                    name="Anna"
-                    status="Confirmed"
-                  />
-                  <AppointmentRow
-                    time="11:30 AM"
-                    service="Nail Art"
-                    name="Maria"
-                    status="Pending"
-                  />
-                  <AppointmentRow
-                    time="01:00 PM"
-                    service="Pedicure"
-                    name="Olga"
-                    status="Confirmed"
-                  />
+                  {loading ? (
+                    <div className="py-10 text-center text-slate-400 animate-pulse font-bold">
+                      Завантаження графіка...
+                    </div>
+                  ) : bookings.length > 0 ? (
+                    bookings.map((booking) => (
+                      <AppointmentRow key={booking.id} {...booking} />
+                    ))
+                  ) : (
+                    <div className="py-10 text-center text-slate-400 italic">
+                      На сьогодні записів ще немає
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -346,7 +380,7 @@ export default function AdminDashboard({ session }: { session: Session }) {
                     <p className="text-[10px] font-bold text-white/80 text-center">
                       Total
                     </p>
-                    <p className="text-sm font-black text-white text-center">
+                    <p className="text-sm font-black text-white text-center italic">
                       Today
                     </p>
                   </div>
@@ -358,7 +392,7 @@ export default function AdminDashboard({ session }: { session: Session }) {
                   <h3 className="font-black text-lg text-slate-700">
                     Recent Client Requests
                   </h3>
-                  <button className="text-slate-300">
+                  <button className="text-slate-300 hover:text-rose-400 transition-colors">
                     <Settings size={14} />
                   </button>
                 </div>
