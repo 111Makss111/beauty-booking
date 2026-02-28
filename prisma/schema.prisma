@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String   // Додали
+  lastName    String   // Додали
+  phone       String
+  countryCode String
+  role        String   @default("CLIENT")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  emailVerified    Boolean  @default(false)
+  verificationCode String?  // Код з 6 цифр
+}

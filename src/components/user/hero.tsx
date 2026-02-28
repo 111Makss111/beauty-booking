@@ -1,49 +1,55 @@
 import Link from "next/link";
-import Form from "./form";
 
 export default function Hero() {
   return (
     <section
       id="home"
-      className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-stretch"
+      className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-16 grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center"
     >
-      <div className="glass-card p-6 md:p-10 flex flex-col justify-center">
-        <h1 className="text-3xl md:text-5xl font-bold text-slate-800 leading-tight mb-6 md:mb-8 text-center md:text-left">
-          Beauty Nails: Ваш шлях до бездоганних нігтів.
+      <div className="flex flex-col gap-6 md:gap-8 items-center lg:items-start text-center lg:text-left">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-800 leading-tight">
+          Ваш шлях до <br className="hidden lg:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
+            бездоганних нігтів
+          </span>
         </h1>
 
-        <div className="flex flex-col sm:flex-row gap-6 md:gap-8 items-center">
-          <div className="w-full sm:w-1/2 aspect-[4/5] relative rounded-2xl overflow-hidden shadow-md bg-pink-100 flex items-center justify-center text-pink-400">
-            <span className="font-medium">Фото манікюру</span>
-          </div>
-
-          <div className="w-full sm:w-1/2 flex flex-col gap-4 md:gap-6 items-center md:items-start text-center md:text-left">
-            <p className="text-base md:text-lg font-medium text-slate-700">
-              Забронюйте свій ідеальний візит онлайн за лічені хвилини.
-            </p>
-            <div className="bg-white/60 p-4 rounded-xl text-sm text-slate-600 shadow-sm border border-white/60 backdrop-blur-sm">
-              Отримуйте ексклюзивні пропозиції, керуйте бронюваннями та
-              знаходьте улюблених майстрів.
-            </div>
-            <Link
-              href="#services"
-              className="btn-secondary text-center w-full md:w-max"
-            >
-              Почати бронювання
-            </Link>
-          </div>
-        </div>
+        <p className="text-base md:text-lg font-medium text-slate-600 max-w-lg">
+          Забронюйте свій ідеальний візит онлайн за лічені хвилини. Отримуйте
+          ексклюзивні пропозиції, керуйте бронюваннями та знаходьте улюблених
+          майстрів.
+        </p>
       </div>
 
-      <div className="glass-panel p-6 md:p-10 flex flex-col justify-center">
-        <h2 className="text-xl md:text-2xl font-bold text-center text-slate-800 mb-2">
-          Новий користувач? Зареєструйтесь.
-        </h2>
-        <p className="text-center text-slate-500 mb-6 md:mb-8 text-xs md:text-sm">
-          Щоб отримати повний доступ до кабінету, будь ласка, зареєструйтесь.
-        </p>
+      <div className="w-full relative aspect-square md:aspect-[4/3] lg:aspect-square rounded-3xl overflow-hidden shadow-2xl glass-panel group bg-pink-50 flex items-center justify-center text-pink-300">
+        <img
+          src="/hero-img.png"
+          alt="Манікюр"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        />
 
-        <Form />
+        <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 glass-card p-4 flex items-center gap-4">
+          <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-pink-500 shadow-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-bold text-slate-800">Топ майстри</p>
+            <p className="text-xs text-slate-600">Гарантія якості</p>
+          </div>
+        </div>
       </div>
     </section>
   );
