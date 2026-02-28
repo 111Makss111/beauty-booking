@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 min-h-screen text-slate-800 antialiased;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-md border border-white/40 shadow-sm rounded-3xl;
+  }
+
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-lg border border-white/50 shadow-md rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-pink-500 hover:bg-pink-600 text-white font-medium py-3 px-6 rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-white/70 hover:bg-white text-slate-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300 shadow-sm border border-pink-100;
+  }
+
+  .input-field {
+    @apply w-full bg-white/80 border border-pink-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all text-slate-700 placeholder:text-slate-400;
+  }
+}
