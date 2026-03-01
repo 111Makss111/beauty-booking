@@ -8,14 +8,12 @@ import DashboardOverview from "@/components/klient/dashboard-overview";
 const prisma = new PrismaClient();
 
 export default async function KlientPage() {
-  // 1. Перевіряємо сесію
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
     redirect("/");
   }
 
-  // 2. Дістаємо користувача з бази
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
   });
@@ -24,7 +22,10 @@ export default async function KlientPage() {
     redirect("/");
   }
 
-  // 3. Фейсконтроль пошти
+  if (user.role === "ADMIN") {
+    redirect("/admin");
+  }
+
   if (!user.emailVerified) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
@@ -33,6 +34,5 @@ export default async function KlientPage() {
     );
   }
 
-  // 4. Рендеримо головний компонент кабінету, передаючи туди дані
   return <DashboardOverview user={user} />;
 }

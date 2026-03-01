@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { registerUser } from "@/auth/auth";
+import { registerUser, sendPasswordResetEmail } from "@/auth/auth";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +11,9 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [view, setView] = useState<"welcome" | "login" | "register">("welcome");
+  const [view, setView] = useState<
+    "welcome" | "login" | "register" | "forgot-password"
+  >("welcome");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -85,6 +87,29 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setIsLoading(false);
       }, 1000);
     }
+  };
+
+  const handleGoogleSignIn = () => {
+    setIsLoading(true);
+    signIn("google", { callbackUrl: "/klient" });
+  };
+
+  // НОВА ФУНКЦІЯ: Відправка листа для скидання пароля
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    const result = await sendPasswordResetEmail(email);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setSuccess("Посилання для відновлення відправлено на вашу пошту!");
+      setTimeout(() => setView("login"), 4000);
+    }
+    setIsLoading(false);
   };
 
   const labelStyle =
@@ -163,7 +188,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {view === "welcome" && (
           <div className="flex flex-col gap-4 animate-in fade-in duration-300">
             <button
-              className={`w-full bg-white flex items-center justify-center gap-3 text-slate-700 font-bold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all ${btnClickScale}`}
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className={`w-full bg-white flex items-center justify-center gap-3 text-slate-700 font-bold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 ${btnClickScale}`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -188,7 +215,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
                 />
               </svg>
-              Продовжити з Google
+              {isLoading ? "Завантаження..." : "Продовжити з Google"}
             </button>
             <div className="flex items-center gap-3 my-2 opacity-50">
               <div className="flex-1 h-px bg-slate-400"></div>
@@ -213,7 +240,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {view === "login" && (
           <form
             onSubmit={handleLoginSubmit}
-            className="flex flex-col gap-5 animate-in slide-in-from-bottom-4 duration-300"
+            className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 duration-300"
           >
             <div>
               <label className={labelStyle}>Email</label>
@@ -280,12 +307,57 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 )}
               </button>
             </div>
+
+            {/* ДОДАНО: Кнопка "Забули пароль?" */}
+            <div className="flex justify-end -mt-2">
+              <button
+                type="button"
+                onClick={() => setView("forgot-password")}
+                className="text-xs font-bold text-slate-500 hover:text-pink-500 transition-colors"
+                disabled={isLoading}
+              >
+                Забули пароль?
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
               className={`w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold py-4 rounded-2xl shadow-lg mt-2 ${btnClickScale}`}
             >
               {isLoading ? "Завантаження..." : "Увійти"}
+            </button>
+          </form>
+        )}
+
+        {/* НОВИЙ СТАН: Форма відновлення пароля */}
+        {view === "forgot-password" && (
+          <form
+            onSubmit={handleForgotPasswordSubmit}
+            className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 duration-300"
+          >
+            <div>
+              <p className="text-sm text-slate-500 mb-6 text-center">
+                Введіть свою електронну пошту, і ми надішлемо вам посилання для
+                створення нового пароля.
+              </p>
+              <label className={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@mail.com"
+                className={inputStyle}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full bg-gradient-to-r from-pink-400 to-pink-500 text-white font-bold py-4 rounded-2xl shadow-lg mt-2 ${btnClickScale}`}
+            >
+              {isLoading ? "Відправка..." : "Надіслати посилання"}
             </button>
           </form>
         )}
