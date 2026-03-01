@@ -95,6 +95,10 @@ export const authOptions: NextAuthOptions = {
                 firstName,
                 lastName,
                 emailVerified: true,
+                // Додаємо ці три рядки, щоб заспокоїти Vercel:
+                password: "",
+                phone: "",
+                countryCode: "",
               },
             });
           }
