@@ -1,12 +1,10 @@
 "use server";
 
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import disposableDomains from "disposable-email-domains";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-
-const prisma = new PrismaClient();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",

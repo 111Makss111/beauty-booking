@@ -27,6 +27,8 @@ model User {
   telegramUsername String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  notifyAppointments Boolean @default(true)
+  notifyPromotions   Boolean @default(false)
 }
 
 

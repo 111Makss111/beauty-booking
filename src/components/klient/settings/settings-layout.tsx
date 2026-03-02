@@ -1,6 +1,7 @@
 "use client";
 
 import TelegramCard from "./telegram-card";
+import NotificationsBlock from "./notifications-block";
 
 export default function SettingsLayout() {
   return (
@@ -14,16 +15,11 @@ export default function SettingsLayout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ЛІВА КОЛОНКА */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="bg-white/70 backdrop-blur-md rounded-[2rem] p-8 shadow-sm border border-white h-[500px] flex items-center justify-center text-slate-400 border-dashed border-2 hover:bg-white/90 transition-colors">
-            Місце для блоку Сповіщення (Ліва колонка)
-          </div>
+          <NotificationsBlock />
         </div>
 
-        {/* ПРАВА КОЛОНКА */}
         <div className="lg:col-span-1 flex flex-col gap-6">
-          {/* Заглушка для Бонусів */}
           <div className="bg-white/70 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white flex flex-col gap-3">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center">
@@ -40,7 +36,6 @@ export default function SettingsLayout() {
             </div>
           </div>
 
-          {/* НАША ФІЧА №1 - ТЕЛЕГРАМ */}
           <TelegramCard />
         </div>
       </div>

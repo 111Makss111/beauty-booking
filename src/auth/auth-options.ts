@@ -1,7 +1,7 @@
 import { NextAuthOptions, DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 declare module "next-auth" {
@@ -23,8 +23,6 @@ declare module "next-auth/jwt" {
     role: string;
   }
 }
-
-const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
   providers: [

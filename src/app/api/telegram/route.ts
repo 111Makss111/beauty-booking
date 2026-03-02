@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { processTelegramUpdate } from "@/telegram/telegram-logic";
+import { processTelegramUpdate } from "@/settings/telegram/telegram-logic";
 
 export async function POST(req: Request) {
   try {

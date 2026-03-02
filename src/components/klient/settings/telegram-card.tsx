@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getTelegramData, disconnectTelegram } from "@/telegram/actions";
+import {
+  getTelegramData,
+  disconnectTelegram,
+} from "@/settings/telegram/actions";
 
 export default function TelegramCard() {
   const [isConnected, setIsConnected] = useState(false);
