@@ -51,4 +51,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Як цим керує клієнт? Ніяк не "керує". Він просто бачить свій баланс і кнопку "Історія нарахувань" або "Як витратити бонуси".
 
-https://api.telegram.org/bot8764539435:AAEp9hCt2jIv1dGQyBXuM9uf52M8MRRR9CU/setWebhook?url=beauty-booking-eta.vercel.app/api/telegram
+npx prisma db push

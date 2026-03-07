@@ -37,50 +37,67 @@ export async function disconnectTelegram() {
   return { success: true };
 }
 
-// --- ТЕСТОВА ЗОНА ---
-export async function testDelayedNotification() {
+export async function sendBroadcastToClients(text: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return { error: "Не авторизовано" };
 
-  await new Promise((resolve) => setTimeout(resolve, 60000));
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { telegramChatId: true, notifyAppointments: true },
-  });
-
-  if (!user?.telegramChatId) {
-    return { error: "Telegram не підключено" };
-  }
-
-  if (!user.notifyAppointments) {
-    return { error: "Клієнт вимкнув сповіщення під час очікування" };
+  if (!session?.user?.email || session.user.role !== "ADMIN") {
+    return {
+      error: "Доступ заборонено. Тільки адміністратор може робити розсилку.",
+    };
   }
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const message =
-    "🔔 Дзинь! Це тестове відкладене нагадування про запис. Ваш тумблер увімкнено!";
+  if (!botToken) {
+    return { error: "Токен бота не налаштовано в системі." };
+  }
 
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: user.telegramChatId,
-          text: message,
-        }),
+    const clients = await prisma.user.findMany({
+      where: {
+        telegramChatId: { not: null },
       },
-    );
+      select: { telegramChatId: true },
+    });
 
-    if (!response.ok) {
-      return { error: "Помилка відправки в Telegram" };
+    if (clients.length === 0) {
+      return { error: "Немає підключених клієнтів для розсилки." };
     }
 
-    return { success: true };
+    let successCount = 0;
+
+    const sendPromises = clients.map(async (client) => {
+      if (!client.telegramChatId) return;
+
+      const response = await fetch(
+        `https://api.telegram.org/bot${botToken}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: client.telegramChatId,
+            text: text,
+            parse_mode: "HTML",
+          }),
+        },
+      );
+
+      if (response.ok) {
+        successCount++;
+      }
+    });
+
+    await Promise.allSettled(sendPromises);
+
+    await prisma.telegramBroadcast.create({
+      data: {
+        text: text,
+        recipientCount: successCount,
+      },
+    });
+
+    return { success: true, count: successCount };
   } catch (error) {
-    return { error: "Помилка сервера при відправці" };
+    console.error("Помилка масової розсилки Telegram:", error);
+    return { error: "Сталася помилка при відправці повідомлень." };
   }
 }
-// --- КІНЕЦЬ ТЕСТОВОЇ ЗОНИ ---

@@ -1,23 +1,38 @@
-// src/app/admin/page.tsx
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/auth/auth-options"; // Перевір, чи правильний шлях до твого auth-options
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth/auth-options";
 import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
 import AdminDashboard from "@/components/admin/dashboard-overview";
 
 export default async function AdminPage() {
-  // Дістаємо "паспорт" користувача
   const session = await getServerSession(authOptions);
 
-  // 1. Якщо взагалі не авторизований — на головну
-  if (!session) {
+  if (!session?.user?.email) {
     redirect("/");
   }
 
-  // 2. Якщо це КЛІЄНТ (намагається схитрувати і ввів /admin) — викидаємо в його кабінет
-  if (session.user.role !== "ADMIN") {
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+
+  if (!user) {
+    redirect("/");
+  }
+
+  if (user.role !== "ADMIN" && user.role !== "MASTER") {
     redirect("/klient");
   }
 
-  // 3. Якщо перевірки пройдені — показуємо адмінку
-  return <AdminDashboard />;
+  const safeUser = {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    image: user.image,
+    hasPassword: Boolean(user.password),
+  };
+
+  return <AdminDashboard user={safeUser} />;
 }

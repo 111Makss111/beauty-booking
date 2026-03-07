@@ -1,11 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth/auth-options";
 import { redirect } from "next/navigation";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import VerificationForm from "@/components/auth/verification-form";
 import DashboardOverview from "@/components/klient/dashboard-overview";
-
-const prisma = new PrismaClient();
 
 export default async function KlientPage() {
   const session = await getServerSession(authOptions);
@@ -22,7 +20,7 @@ export default async function KlientPage() {
     redirect("/");
   }
 
-  if (user.role === "ADMIN") {
+  if (user.role === "ADMIN" || user.role === "MASTER") {
     redirect("/admin");
   }
 

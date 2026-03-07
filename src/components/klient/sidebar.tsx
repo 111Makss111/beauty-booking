@@ -6,6 +6,7 @@ interface SidebarProps {
   user: {
     firstName: string;
     lastName: string;
+    image?: string | null;
   };
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -16,7 +17,6 @@ export default function Sidebar({
   activeTab,
   setActiveTab,
 }: SidebarProps) {
-  // Перекладено українською, бейдж із повідомлень прибрано
   const navItems = [
     { id: "book", label: "Новий запис", icon: <CalendarIcon /> },
     { id: "appointments", label: "Мої записи", icon: <ClipboardListIcon /> },
@@ -27,7 +27,6 @@ export default function Sidebar({
 
   return (
     <aside className="w-64 h-full bg-white/40 flex flex-col py-8 px-6 border-r border-pink-100/50">
-      {/* 1. Логотип */}
       <div className="flex items-center gap-3 mb-10 pl-2">
         <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-400 rounded-lg flex items-center justify-center shadow-md shadow-pink-200">
           <svg
@@ -48,11 +47,18 @@ export default function Sidebar({
         </h1>
       </div>
 
-      {/* 2. Профіль користувача */}
       <div className="flex items-center gap-4 mb-8 pl-2">
         <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-200 to-rose-100 p-1">
-          <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-pink-500 font-bold text-lg">
-            {user.firstName.charAt(0)}
+          <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden text-pink-500 font-bold text-lg">
+            {user.image ? (
+              <img
+                src={user.image}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              user.firstName.charAt(0)
+            )}
           </div>
         </div>
         <div>
@@ -63,7 +69,6 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* 3. Навігаційне меню */}
       <nav className="flex-1 flex flex-col gap-2">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -90,7 +95,6 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* 4. Кнопка виходу */}
       <div className="mt-auto">
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
@@ -117,7 +121,6 @@ export default function Sidebar({
   );
 }
 
-// === ІКОНКИ (SVG) залишаємо без змін ===
 function CalendarIcon() {
   return (
     <svg

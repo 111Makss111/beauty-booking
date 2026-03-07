@@ -6,15 +6,11 @@ import {
   getNotificationSettings,
   updateNotificationSetting,
 } from "@/settings/actions";
-import { testDelayedNotification } from "@/settings/telegram/actions";
 
 export default function NotificationsBlock() {
   const [appointments, setAppointments] = useState(true);
   const [promotions, setPromotions] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState("");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -47,23 +43,6 @@ export default function NotificationsBlock() {
     } catch (error) {
       console.error(error);
       setter(currentValue);
-    }
-  };
-
-  const handleTest = async () => {
-    setIsTesting(true);
-    setTestResult("");
-    try {
-      const res = await testDelayedNotification();
-      if (res.error) {
-        setTestResult(`❌ ${res.error}`);
-      } else {
-        setTestResult("✅ Повідомлення надіслано!");
-      }
-    } catch (error) {
-      setTestResult("❌ Помилка: Vercel обірвав з'єднання (Таймаут 10-15с)");
-    } finally {
-      setIsTesting(false);
     }
   };
 
@@ -129,27 +108,6 @@ export default function NotificationsBlock() {
             }
           />
         </div>
-
-        {/* --- ТЕСТОВА ЗОНА --- */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col items-center gap-2">
-          <button
-            onClick={handleTest}
-            disabled={isTesting}
-            className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-700 disabled:opacity-50 transition-colors"
-          >
-            {isTesting
-              ? "Очікуємо 1 хвилину..."
-              : "Відправити тестове нагадування (1 хв)"}
-          </button>
-          {testResult && (
-            <span
-              className={`text-sm font-medium ${testResult.includes("❌") ? "text-red-500" : "text-green-500"}`}
-            >
-              {testResult}
-            </span>
-          )}
-        </div>
-        {/* --- КІНЕЦЬ ТЕСТОВОЇ ЗОНИ --- */}
       </div>
     </div>
   );
