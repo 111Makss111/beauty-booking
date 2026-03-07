@@ -20,13 +20,13 @@ export default function MastersToolbar({
   ];
 
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex bg-white/60 backdrop-blur-sm border border-pink-100 p-1 rounded-2xl shadow-sm">
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between w-full gap-4">
+      <div className="flex overflow-x-auto bg-white/60 backdrop-blur-sm border border-pink-100 p-1 rounded-2xl shadow-sm custom-scrollbar">
         {filters.map((filter) => (
           <button
             key={filter.id}
             onClick={() => onFilterChange(filter.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`whitespace-nowrap flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeFilter === filter.id
                 ? "bg-white text-pink-500 shadow-sm"
                 : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
@@ -39,9 +39,9 @@ export default function MastersToolbar({
 
       <button
         onClick={onAddClick}
-        className="bg-pink-400 hover:bg-pink-500 text-white px-5 py-2.5 rounded-2xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-pink-200"
+        className="w-full lg:w-auto justify-center bg-pink-400 hover:bg-pink-500 text-white px-5 py-3 lg:py-2.5 rounded-2xl font-medium transition-colors flex items-center gap-2 shadow-sm shadow-pink-200"
       >
-        <Plus className="w-5 h-5" />
+        <Plus className="w-5 h-5 shrink-0" />
         Додати майстра
       </button>
     </div>

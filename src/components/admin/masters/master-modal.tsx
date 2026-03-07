@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  X,
-  User as UserIcon,
-  Check,
-  ChevronsUpDown,
-  Loader2,
-} from "lucide-react";
+import { X, ChevronsUpDown, Loader2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -99,116 +93,113 @@ export default function MasterModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       <div
-        className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-xl border border-pink-50 p-6 sm:p-8 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-xl border border-pink-50 p-5 sm:p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 text-slate-400 hover:text-pink-500 hover:bg-pink-50 p-2 rounded-full transition-colors"
+          className="absolute right-4 top-4 sm:right-6 sm:top-6 text-slate-400 hover:text-pink-500 hover:bg-pink-50 p-2 rounded-full transition-colors z-10 bg-white"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-2xl font-bold text-slate-800 mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-6 pr-10">
           {masterId ? "Редагувати майстра" : "Додати майстра"}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Оберіть користувача
-            </label>
-            <div className="relative">
-              <select
-                required
-                disabled={!!masterId}
-                value={formData.userId}
-                onChange={(e) =>
-                  setFormData({ ...formData, userId: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <option value="">Оберіть людину зі списку...</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.firstName} {user.lastName} ({user.email})
-                  </option>
-                ))}
-              </select>
-              {!masterId && (
-                <ChevronsUpDown className="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-              )}
-            </div>
-            {!masterId && (
-              <p className="text-[10px] text-slate-400 mt-1.5 px-1">
-                Тут відображаються лише зареєстровані клієнти
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Спеціалізація
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.specialization}
-              onChange={(e) =>
-                setFormData({ ...formData, specialization: e.target.value })
-              }
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all"
-              placeholder="Наприклад: Топ-майстер манікюру"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Статус
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {["WORKING", "VACATION"].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, status: s })}
-                  className={`py-3 rounded-2xl border text-sm font-bold transition-all ${
-                    formData.status === s
-                      ? "bg-pink-50 border-pink-200 text-pink-600 shadow-sm"
-                      : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  }`}
+        <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2">
+          <form onSubmit={handleSubmit} className="space-y-5 pb-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Оберіть користувача
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  disabled={!!masterId}
+                  value={formData.userId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, userId: e.target.value })
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
-                  {s === "WORKING" ? "Працює" : "Відпустка"}
-                </button>
-              ))}
+                  <option value="">Оберіть людину зі списку...</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName} ({user.email})
+                    </option>
+                  ))}
+                </select>
+                {!masterId && (
+                  <ChevronsUpDown className="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="pt-4 flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl font-medium transition-colors"
-            >
-              Скасувати
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || isFetchingUsers}
-              className="flex-1 px-4 py-3 text-white bg-pink-500 hover:bg-pink-600 rounded-2xl font-medium transition-colors shadow-sm shadow-pink-200 disabled:opacity-70 flex items-center justify-center"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                "Зберегти"
-              )}
-            </button>
-          </div>
-        </form>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Спеціалізація
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.specialization}
+                onChange={(e) =>
+                  setFormData({ ...formData, specialization: e.target.value })
+                }
+                className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all text-sm sm:text-base"
+                placeholder="Наприклад: Топ-майстер манікюру"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Статус
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {["WORKING", "VACATION"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, status: s })}
+                    className={`py-3 rounded-2xl border text-sm font-bold transition-all ${
+                      formData.status === s
+                        ? "bg-pink-50 border-pink-200 text-pink-600 shadow-sm"
+                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                    }`}
+                  >
+                    {s === "WORKING" ? "Працює" : "Відпустка"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full sm:flex-1 px-4 py-3.5 sm:py-3 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl font-medium transition-colors order-2 sm:order-1"
+              >
+                Скасувати
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || isFetchingUsers}
+                className="w-full sm:flex-1 px-4 py-3.5 sm:py-3 text-white bg-pink-500 hover:bg-pink-600 rounded-2xl font-medium transition-colors shadow-sm shadow-pink-200 disabled:opacity-70 flex items-center justify-center order-1 sm:order-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Зберегти"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

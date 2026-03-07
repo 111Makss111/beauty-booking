@@ -110,23 +110,31 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-300 relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+      {/* Клікабельний фон для закриття вікна на мобільному */}
+      <div
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Змінено структуру контейнера для правильного скролу */}
+      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-lg p-5 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-300 relative max-h-[90vh] flex flex-col">
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-50 transition-colors"
+          className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-50 transition-colors z-10 bg-white"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-            <Plus className="w-6 h-6" />
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-800 mb-5 sm:mb-6 flex items-center gap-3 pr-8 shrink-0">
+          <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 shrink-0">
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          Нове Гаряче вікно
+          <span className="truncate">Нове Гаряче вікно</span>
         </h3>
 
-        <div className="space-y-5">
+        {/* Форма поміщена в окремий блок зі скролом */}
+        <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2 space-y-4 sm:space-y-5 pb-2">
           <ServiceSelect
             value={newOffer.serviceId}
             onChange={(val) => setNewOffer({ ...newOffer, serviceId: val })}
@@ -159,24 +167,24 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
                 setNewOffer({ ...newOffer, discount: e.target.value })
               }
               placeholder="Наприклад: -20% або 500₴"
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-100"
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 sm:px-5 py-3 sm:py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
             />
           </div>
 
           {error && (
             <div className="flex items-center gap-2 text-rose-500 text-xs font-medium px-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span className="truncate">{error}</span>
             </div>
           )}
 
           <button
             onClick={handleAddOffer}
             disabled={isLoading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-[1.8rem] font-bold text-sm transition-all shadow-xl shadow-slate-200 mt-4 active:scale-95 flex items-center justify-center gap-2"
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 sm:py-4 rounded-[1.8rem] font-bold text-sm transition-all shadow-xl shadow-slate-200 mt-2 sm:mt-4 active:scale-95 flex items-center justify-center gap-2"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
             ) : (
               "Створити Гаряче вікно"
             )}

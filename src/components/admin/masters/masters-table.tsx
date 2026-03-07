@@ -88,9 +88,9 @@ export default function MastersTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-10">
-      <table className="w-full text-left border-collapse">
-        <thead>
+    <div className="w-full pb-10">
+      <table className="w-full text-left border-collapse block lg:table">
+        <thead className="hidden lg:table-header-group">
           <tr className="text-slate-400 border-b border-pink-100/50">
             <th className="pb-4 font-medium px-4">Майстер</th>
             <th className="pb-4 font-medium px-4">Контакти</th>
@@ -98,13 +98,13 @@ export default function MastersTable({
             <th className="pb-4 font-medium px-4 text-right"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="block lg:table-row-group space-y-4 lg:space-y-0">
           {filteredMasters.map((master) => (
             <tr
               key={master.id}
-              className="group border-b border-pink-50/50 hover:bg-white/40 transition-colors"
+              className="group block lg:table-row bg-white lg:bg-transparent rounded-2xl lg:rounded-none border border-pink-50 lg:border-0 lg:border-b lg:border-pink-50/50 hover:bg-white/40 transition-colors p-4 lg:p-0 relative shadow-sm lg:shadow-none"
             >
-              <td className="py-4 px-4">
+              <td className="block lg:table-cell py-2 lg:py-4 px-0 lg:px-4 mb-3 lg:mb-0">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-300 shrink-0 overflow-hidden">
                     {master.user.image ? (
@@ -117,7 +117,7 @@ export default function MastersTable({
                       <UserIcon className="w-6 h-6" />
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1 pr-8 lg:pr-0">
                     <h4 className="font-bold text-slate-700 leading-tight">
                       {master.user.firstName} {master.user.lastName}
                     </h4>
@@ -138,19 +138,26 @@ export default function MastersTable({
                   </div>
                 </div>
               </td>
-              <td className="py-4 px-4">
-                <div className="flex flex-col gap-1">
+
+              <td className="block lg:table-cell py-2 lg:py-4 px-0 lg:px-4 mb-3 lg:mb-0">
+                <div className="flex flex-col gap-1 bg-slate-50 lg:bg-transparent p-3 lg:p-0 rounded-xl lg:rounded-none">
                   <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="w-3.5 h-3.5 text-slate-300" />
-                    {master.user.phone || "Не вказано"}
+                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">
+                      {master.user.phone || "Не вказано"}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Mail className="w-3.5 h-3.5 text-slate-300" />
-                    {master.user.email}
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{master.user.email}</span>
                   </div>
                 </div>
               </td>
-              <td className="py-4 px-4">
+
+              <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4">
+                <span className="text-sm font-medium text-slate-500 lg:hidden">
+                  Статус:
+                </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${
                     master.status === "WORKING"
@@ -161,13 +168,20 @@ export default function MastersTable({
                   {master.status === "WORKING" ? "Працює" : "Відпустка"}
                 </span>
               </td>
-              <td className="py-4 px-4 text-right relative">
-                <div className="flex items-center justify-end gap-2">
+
+              <td className="absolute lg:static top-4 right-4 lg:top-auto lg:right-auto py-0 lg:py-4 px-0 lg:px-4 text-right">
+                <div className="flex items-center justify-end gap-1 lg:gap-2">
                   <button
                     onClick={() => onEditClick(master.id)}
-                    className="px-4 py-2 text-sm font-bold text-pink-500 hover:bg-pink-50 rounded-xl transition-colors"
+                    className="hidden lg:block px-4 py-2 text-sm font-bold text-pink-500 hover:bg-pink-50 rounded-xl transition-colors"
                   >
                     Редагувати
+                  </button>
+                  <button
+                    onClick={() => onEditClick(master.id)}
+                    className="lg:hidden p-2 text-pink-500 bg-pink-50 rounded-lg"
+                  >
+                    <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() =>
@@ -175,14 +189,14 @@ export default function MastersTable({
                         master.id === openDropdownId ? null : master.id,
                       )
                     }
-                    className="p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 lg:bg-transparent rounded-lg lg:rounded-none"
                   >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
 
                 {openDropdownId === master.id && (
-                  <div className="absolute right-4 top-14 w-40 bg-white rounded-2xl shadow-lg border border-pink-50 py-2 z-10 animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 lg:right-4 top-12 lg:top-14 w-40 bg-white rounded-2xl shadow-lg border border-pink-50 py-2 z-10 animate-in fade-in zoom-in-95">
                     <button
                       onClick={() => handleDelete(master.id)}
                       className="w-full text-left px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 flex items-center gap-2"
@@ -204,7 +218,7 @@ export default function MastersTable({
             <UserIcon className="w-8 h-8" />
           </div>
           <h3 className="text-slate-700 font-bold">Майстрів не знайдено</h3>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1 px-4">
             Спробуйте змінити фільтр або додайте нового працівника.
           </p>
         </div>

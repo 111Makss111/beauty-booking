@@ -26,7 +26,7 @@ export default function ServicesLayout() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-4 lg:gap-6 animate-in fade-in duration-500">
       <ServicesToolbar
         selectedCategory="all"
         onCategoryChange={() => {}}
@@ -35,7 +35,7 @@ export default function ServicesLayout() {
         onAddClick={handleAddService}
       />
 
-      <div className="bg-white/60 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-6">
+      <div className="bg-transparent lg:bg-white/60 lg:backdrop-blur-md rounded-none lg:rounded-[2rem] border-0 lg:border border-white shadow-none lg:shadow-sm p-0 lg:p-6">
         <ServicesTable
           showOnlyActive={showOnlyActive}
           onEditClick={handleEditService}

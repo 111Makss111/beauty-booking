@@ -8,6 +8,8 @@ import {
   Trash2,
   Image as ImageIcon,
   Loader2,
+  Clock,
+  Euro,
 } from "lucide-react";
 
 interface Service {
@@ -54,8 +56,8 @@ export default function ServicesTable({
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours} год ${mins} хв`;
-    if (hours > 0) return `${hours} година`;
+    if (hours > 0 && mins > 0) return `${hours} г ${mins} хв`;
+    if (hours > 0) return `${hours} год`;
     return `${mins} хв`;
   };
 
@@ -89,9 +91,9 @@ export default function ServicesTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-24">
-      <table className="w-full text-left border-collapse">
-        <thead>
+    <div className="w-full pb-20">
+      <table className="w-full text-left border-collapse block lg:table">
+        <thead className="hidden lg:table-header-group">
           <tr className="text-slate-400 border-b border-pink-100/50">
             <th className="pb-4 font-medium px-4">Послуги</th>
             <th className="pb-4 font-medium px-4">Тривалість</th>
@@ -100,15 +102,16 @@ export default function ServicesTable({
             <th className="pb-4 font-medium px-4 text-right"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="block lg:table-row-group space-y-4 lg:space-y-0">
           {filteredServices.map((service) => (
             <tr
               key={service.id}
-              className="group border-b border-pink-50/50 hover:bg-white/40 transition-colors"
+              className="group block lg:table-row bg-white lg:bg-transparent rounded-2xl lg:rounded-none border border-pink-50 lg:border-0 lg:border-b lg:border-pink-50/50 hover:bg-white/40 transition-colors p-4 lg:p-0 relative shadow-sm lg:shadow-none"
             >
-              <td className="py-4 px-4">
+              {/* НАЗВА ТА ФОТО */}
+              <td className="block lg:table-cell py-2 lg:py-4 px-0 lg:px-4 mb-2 lg:mb-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-300 shrink-0 overflow-hidden">
+                  <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-100 flex items-center justify-center text-pink-300 shrink-0 overflow-hidden shadow-inner">
                     {service.image ? (
                       <img
                         src={service.image}
@@ -119,76 +122,100 @@ export default function ServicesTable({
                       <ImageIcon className="w-5 h-5" />
                     )}
                   </div>
-                  <span className="font-medium text-slate-700">
-                    {service.name}
-                  </span>
+                  <div className="min-w-0 pr-10 lg:pr-0">
+                    <span className="font-bold text-slate-700 block truncate lg:whitespace-normal">
+                      {service.name}
+                    </span>
+                    <span className="lg:hidden text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                      {service.category || "Без категорії"}
+                    </span>
+                  </div>
                 </div>
               </td>
-              <td className="py-4 px-4 text-slate-600">
-                {formatDuration(service.duration)}
-              </td>
-              <td className="py-4 px-4 text-slate-600">€{service.price}</td>
-              <td className="py-4 px-4">
-                <label className="flex items-center gap-2 cursor-pointer w-max">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      className="sr-only"
-                      checked={service.isActive}
-                      onChange={() =>
-                        toggleStatus(service.id, service.isActive)
-                      }
-                    />
-                    <div
-                      className={`block w-10 h-5 rounded-full transition-colors duration-300 ${
-                        service.isActive ? "bg-emerald-400" : "bg-slate-200"
-                      }`}
-                    ></div>
-                    <div
-                      className={`absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform duration-300 ${
-                        service.isActive ? "translate-x-5" : "translate-x-0"
-                      }`}
-                    ></div>
+
+              {/* ТРИВАЛІСТЬ ТА ЦІНА (На мобілці в один рядок) */}
+              <td className="block lg:table-cell py-1 lg:py-4 px-0 lg:px-4 text-slate-600">
+                <div className="flex lg:block items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-sm lg:text-base font-medium">
+                    <Clock className="w-3.5 h-3.5 text-slate-400 lg:hidden" />
+                    {formatDuration(service.duration)}
                   </div>
-                  <span
-                    className={`text-sm font-medium ${
-                      service.isActive ? "text-emerald-500" : "text-slate-400"
-                    }`}
-                  >
-                    {service.isActive ? "Активна" : "Неактивна"}
+                  <div className="lg:hidden w-1 h-1 bg-slate-200 rounded-full" />
+                  <div className="flex lg:hidden items-center gap-1 text-pink-600 font-bold">
+                    €{service.price}
+                  </div>
+                </div>
+              </td>
+
+              {/* ЦІНА (Тільки для десктопа) */}
+              <td className="hidden lg:table-cell py-4 px-4 text-slate-700 font-bold">
+                €{service.price}
+              </td>
+
+              {/* СТАН (Перемикач) */}
+              <td className="block lg:table-cell py-3 lg:py-4 px-0 lg:px-4">
+                <label className="flex items-center justify-between lg:justify-start gap-2 cursor-pointer w-full lg:w-max bg-slate-50 lg:bg-transparent p-2 lg:p-0 rounded-xl">
+                  <span className="lg:hidden text-xs font-bold text-slate-500 pl-1">
+                    Статус:
                   </span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={service.isActive}
+                        onChange={() =>
+                          toggleStatus(service.id, service.isActive)
+                        }
+                      />
+                      <div
+                        className={`block w-10 h-5 rounded-full transition-colors duration-300 ${service.isActive ? "bg-emerald-400" : "bg-slate-300"}`}
+                      />
+                      <div
+                        className={`absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform duration-300 ${service.isActive ? "translate-x-5" : "translate-x-0"}`}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-bold uppercase tracking-tight ${service.isActive ? "text-emerald-500" : "text-slate-400"}`}
+                    >
+                      {service.isActive ? "Активна" : "Пауза"}
+                    </span>
+                  </div>
                 </label>
               </td>
-              <td className="py-4 px-4 text-right relative">
+
+              {/* КНОПКА МЕНЮ (Фіксована зверху справа на картці) */}
+              <td className="absolute lg:static top-4 right-4 py-0 lg:py-4 px-0 lg:px-4 text-right">
                 <button
                   onClick={() => toggleDropdown(service.id)}
-                  className="p-2 text-slate-300 hover:text-pink-500 hover:bg-pink-50 rounded-full transition-colors"
+                  className="p-2 text-slate-300 hover:text-pink-500 bg-slate-50 lg:bg-transparent rounded-full transition-colors"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
 
                 {openDropdownId === service.id && (
-                  <div className="absolute right-8 top-12 w-48 bg-white rounded-2xl shadow-lg border border-pink-50 py-2 z-10 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute right-0 lg:right-8 top-10 lg:top-12 w-48 bg-white rounded-2xl shadow-xl border border-pink-50 py-2 z-10 animate-in fade-in zoom-in-95 duration-200">
                     <button
                       onClick={() => {
                         onEditClick(service.id);
                         setOpenDropdownId(null);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-pink-50 hover:text-pink-600 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-pink-50 hover:text-pink-600 flex items-center gap-2 transition-colors"
                     >
                       <Edit2 className="w-4 h-4" />
                       Редагувати
                     </button>
                     <button
                       onClick={() => setOpenDropdownId(null)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-pink-50 hover:text-pink-600 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-pink-50 hover:text-pink-600 flex items-center gap-2 transition-colors"
                     >
                       <Copy className="w-4 h-4" />
-                      Скопіювати
+                      Дублювати
                     </button>
+                    <div className="h-px bg-slate-50 my-1 mx-2" />
                     <button
                       onClick={() => handleDelete(service.id)}
-                      className="w-full text-left px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm text-rose-500 hover:bg-rose-50 flex items-center gap-2 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                       Видалити
@@ -202,13 +229,13 @@ export default function ServicesTable({
       </table>
 
       {!isLoading && filteredServices.length === 0 && (
-        <div className="text-center py-12 flex flex-col items-center">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-pink-50 mb-3 text-pink-300">
+        <div className="text-center py-20 flex flex-col items-center">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-pink-50 mb-3 text-pink-200">
             <ImageIcon className="w-8 h-8" />
           </div>
-          <h3 className="text-slate-700 font-medium">Послуг ще немає</h3>
-          <p className="text-slate-400 text-sm mt-1">
-            Додайте першу послугу, щоб вона зявилася тут.
+          <h3 className="text-slate-700 font-bold">Послуг не знайдено</h3>
+          <p className="text-slate-400 text-sm mt-1 px-10">
+            Спробуйте змінити фільтри або додайте нову послугу.
           </p>
         </div>
       )}

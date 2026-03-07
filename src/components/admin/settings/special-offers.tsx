@@ -7,7 +7,6 @@ import {
   deleteSpecialOffer,
 } from "@/admin/settings/offers-actions";
 
-// Імпортуємо наші нові маленькі компоненти
 import { OfferCard, Offer } from "./special-offers/offer-card";
 import { BroadcastBlock } from "./special-offers/broadcast-block";
 import { AddOfferModal } from "./special-offers/add-offer-modal";
@@ -17,7 +16,6 @@ export default function SpecialOffers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Завантажуємо акції при старті
   useEffect(() => {
     async function loadData() {
       try {
@@ -32,7 +30,6 @@ export default function SpecialOffers() {
     loadData();
   }, []);
 
-  // Видалення акції
   const handleRemoveOffer = async (id: string) => {
     try {
       await deleteSpecialOffer(id);
@@ -42,34 +39,34 @@ export default function SpecialOffers() {
     }
   };
 
-  // Додавання нової акції після її створення в модалці
   const handleOfferCreated = (newOffer: Offer) => {
     setOffers((prev) => [newOffer, ...prev]);
-    setIsModalOpen(false); // Закриваємо модалку
+    setIsModalOpen(false);
   };
 
   if (isLoading && offers.length === 0) {
     return (
-      <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-sm flex items-center justify-center h-40">
+      <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-5 lg:p-8 border border-white shadow-sm flex items-center justify-center h-40">
         <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Основний блок з акціями */}
-      <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-sm transition-all relative">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-              <Sparkles className="w-5 h-5" />
+      <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-5 lg:p-8 border border-white shadow-sm transition-all relative">
+        {/* АДАПТИВНА ШАПКА */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 shrink-0">
+              <Sparkles className="w-5 h-5 lg:w-6 lg:h-6" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-800 leading-tight truncate">
                 Акції та пропозиції
               </h2>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5 truncate">
                 Керування лояльністю
               </p>
             </div>
@@ -77,7 +74,7 @@ export default function SpecialOffers() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-5 py-2.5 rounded-2xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-pink-100"
+            className="w-full sm:w-auto flex justify-center items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-5 py-3 lg:py-2.5 rounded-2xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-pink-100 shrink-0"
           >
             <Plus className="w-4 h-4" />
             Додати акцію
@@ -85,7 +82,7 @@ export default function SpecialOffers() {
         </div>
 
         {/* Сітка карток */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
           {offers.map((offer) => (
             <OfferCard
               key={offer.id}
@@ -96,7 +93,7 @@ export default function SpecialOffers() {
 
           {offers.length === 0 && !isLoading && (
             <div className="col-span-full py-10 border-2 border-dashed border-slate-100 rounded-[2rem] flex flex-col items-center justify-center text-slate-300">
-              <p className="text-xs font-medium italic">
+              <p className="text-xs font-medium italic text-center px-4">
                 Активних пропозицій немає
               </p>
             </div>
@@ -107,7 +104,7 @@ export default function SpecialOffers() {
       {/* Окремий блок розсилки */}
       <BroadcastBlock />
 
-      {/* Модальне вікно (рендериться тільки якщо isModalOpen === true) */}
+      {/* Модальне вікно */}
       {isModalOpen && (
         <AddOfferModal
           onClose={() => setIsModalOpen(false)}

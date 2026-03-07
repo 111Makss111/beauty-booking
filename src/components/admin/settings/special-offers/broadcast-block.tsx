@@ -31,21 +31,22 @@ export function BroadcastBlock() {
   };
 
   return (
-    <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200 border border-slate-800 overflow-hidden relative mt-6">
+    <div className="bg-slate-900 rounded-[2.5rem] p-5 lg:p-8 shadow-xl shadow-slate-200 border border-slate-800 overflow-hidden relative mt-4 lg:mt-6">
       <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-sky-500/20 rounded-2xl flex items-center justify-center text-sky-400">
+        <div className="flex items-center gap-3 mb-5 lg:mb-6">
+          <div className="w-10 h-10 lg:w-12 lg:h-12 bg-sky-500/20 rounded-2xl flex items-center justify-center text-sky-400 shrink-0">
             <Send className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white leading-tight">
+          <div className="min-w-0">
+            <h2 className="text-lg lg:text-xl font-bold text-white leading-tight truncate">
               Швидка розсилка
             </h2>
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5 truncate">
               Повідомлення всім клієнтам
             </p>
           </div>
         </div>
+
         <div className="space-y-4">
           <textarea
             value={broadcastText}
@@ -53,29 +54,34 @@ export function BroadcastBlock() {
             placeholder="Напишіть текст повідомлення..."
             className="w-full bg-slate-800/50 border border-slate-700 rounded-[1.5rem] p-4 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 min-h-[120px] transition-all resize-none"
           />
+
           {error && (
-            <div className="flex items-center gap-2 text-rose-400 text-xs font-medium px-4">
-              <AlertCircle className="w-4 h-4" /> {error}
+            <div className="flex items-center gap-2 text-rose-400 text-xs font-medium px-2 lg:px-4">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span className="truncate">{error}</span>
             </div>
           )}
+
           <button
             onClick={handleSendBroadcast}
             disabled={isSending || !broadcastText.trim()}
-            className={`w-full py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+            className={`w-full py-3.5 lg:py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
               broadcastSent
                 ? "bg-emerald-500 text-white"
                 : "bg-sky-500 hover:bg-sky-600 text-white disabled:opacity-50 disabled:grayscale"
             }`}
           >
             {isSending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
             ) : broadcastSent ? (
               <>
-                <CheckCircle2 className="w-5 h-5" /> Повідомлення надіслано!
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span className="truncate">Повідомлення надіслано!</span>
               </>
             ) : (
               <>
-                <Send className="w-4 h-4" /> Надіслати всім клієнтам
+                <Send className="w-4 h-4 shrink-0" />
+                <span className="truncate">Надіслати всім клієнтам</span>
               </>
             )}
           </button>
