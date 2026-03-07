@@ -116,23 +116,6 @@ export default function WorkingHours() {
           </div>
           <h2 className="text-xl font-bold text-slate-800">Робочі години</h2>
         </div>
-
-        <button
-          onClick={() => {
-            setAllowWeekends(!allowWeekends);
-            setIsSaved(false);
-          }}
-          className="flex items-center gap-3 group"
-        >
-          <span className="text-xs font-bold text-slate-400 group-hover:text-pink-500 transition-colors">
-            Запис у вихідні
-          </span>
-          {allowWeekends ? (
-            <ToggleRight className="w-8 h-8 text-pink-500 transition-all" />
-          ) : (
-            <ToggleLeft className="w-8 h-8 text-slate-300 transition-all" />
-          )}
-        </button>
       </div>
 
       <div className="space-y-4 flex-1">

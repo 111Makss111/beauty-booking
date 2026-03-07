@@ -11,6 +11,8 @@ import {
   UserCog,
   Settings,
   LogOut,
+  Menu, // Додано іконку гамбургера
+  X, // Додано іконку хрестика для закриття меню
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import MessagesLayout from "@/components/klient/messages/messages-layout";
@@ -78,6 +80,15 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
     filteredMenuItems[0]?.id || "profile",
   );
 
+  // Стан для керування мобільним меню
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Функція для перемикання вкладок, яка також закриває мобільне меню
+  const handleTabChange = (id: string) => {
+    setActiveTab(id);
+    setIsMobileMenuOpen(false);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "messages":
@@ -111,7 +122,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center text-4xl mb-4 text-pink-500">
               ✨
             </div>
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">
               Вітаємо у кабінеті
             </h2>
             <p className="text-slate-500 mt-2 text-center max-w-xs">
@@ -125,17 +136,48 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
   return (
     <div className="flex min-h-screen bg-[#fdf8fa]">
-      <div className="w-72 h-screen flex flex-col bg-gradient-to-b from-pink-50 to-white border-r border-pink-100 p-6 sticky top-0">
-        <div className="flex items-center gap-3 px-2 mb-10">
-          <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-pink-200">
-            <Sparkles className="text-white w-6 h-6" />
+      {/* Мобільна кнопка гамбургера (видима тільки на малих екранах) */}
+      <button
+        onClick={() => setIsMobileMenuOpen(true)}
+        className="lg:hidden fixed top-4 right-4 z-40 p-3 bg-white rounded-full shadow-md text-pink-500 hover:bg-pink-50 transition-colors"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+
+      {/* Оверлей для затемнення фону на мобільному при відкритому меню */}
+      {isMobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Сайдбар */}
+      <div
+        className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-pink-50 to-white border-r border-pink-100 p-6 flex flex-col
+        transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0
+        ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+      `}
+      >
+        {/* Кнопка закриття меню для мобільних */}
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="lg:hidden absolute top-4 right-4 p-2 text-slate-400 hover:text-pink-500 transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        <div className="flex items-center gap-3 px-2 mb-10 mt-2 lg:mt-0">
+          <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-pink-200 shrink-0">
+            <Sparkles className="text-white w-5 h-5" />
           </div>
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-rose-500">
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-rose-500 truncate">
             Beauty Nails
           </span>
         </div>
 
-        <div className="flex flex-col items-center mb-10 px-2 py-4 bg-white/40 rounded-[2rem] border border-white shadow-sm text-center">
+        <div className="flex flex-col items-center mb-8 px-2 py-4 bg-white/40 rounded-[2rem] border border-white shadow-sm text-center shrink-0">
           <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden mb-3 bg-pink-50 flex items-center justify-center">
             {user.image ? (
               <img
@@ -157,14 +199,14 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </p>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2">
           {filteredMenuItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleTabChange(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-sm ${
                   isActive
                     ? "bg-white shadow-md text-pink-600 border border-pink-50"
@@ -172,25 +214,28 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
                 }`}
               >
                 <Icon
-                  className={`w-5 h-5 ${isActive ? "text-pink-500" : "text-slate-400"}`}
+                  className={`w-5 h-5 shrink-0 ${isActive ? "text-pink-500" : "text-slate-400"}`}
                 />
-                {item.name}
+                <span className="truncate">{item.name}</span>
               </button>
             );
           })}
         </nav>
 
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="mt-6 flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-rose-500 transition-colors font-medium text-sm group"
-        >
-          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          Вийти
-        </button>
+        <div className="pt-4 mt-auto">
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="w-full flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-2xl transition-all font-medium text-sm group"
+          >
+            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform shrink-0" />
+            Вийти
+          </button>
+        </div>
       </div>
 
-      <main className="flex-1 p-8 overflow-y-auto">
-        <header className="mb-8">
+      {/* Головний контент */}
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full lg:w-auto mt-16 lg:mt-0">
+        <header className="mb-6 lg:mb-8">
           <h1 className="text-2xl font-bold text-slate-800">
             {allMenuItems.find((m) => m.id === activeTab)?.name}
           </h1>
