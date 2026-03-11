@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import VerificationForm from "@/components/auth/verification-form";
 import DashboardOverview from "@/components/klient/dashboard-overview";
+// Імпортуємо функцію для отримання статусу Telegram (Правило №32)
+import { getTelegramData } from "@/settings/telegram/actions";
 
 export default async function KlientPage() {
   // 1. Перевірка сесії (Правило №25)
@@ -12,26 +14,30 @@ export default async function KlientPage() {
     redirect("/");
   }
 
-  // 2. Отримання даних користувача (Правило №105)
-  // Ми дістаємо і записи, і тумблери сповіщень в одному запиті до БД
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: {
-      appointments: {
-        include: {
-          service: true,
-          extraOptions: true,
-          master: {
-            include: { user: true },
+  // 2. Отримання даних користувача та статусу Telegram (Правило №105)
+  // Виконуємо запити паралельно для швидкості
+  const [user, telegramData] = await Promise.all([
+    prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        appointments: {
+          include: {
+            service: true,
+            extraOptions: true,
+            master: {
+              include: { user: true },
+            },
           },
+          orderBy: { dateTime: "asc" },
         },
-        orderBy: { dateTime: "asc" },
       },
-    },
-  });
+    }),
+    getTelegramData(), // <--- Отримуємо дані для TelegramCard
+  ]);
 
   // 3. Валідація користувача та ролі
   if (!user) redirect("/");
+
   if (user.role === "ADMIN" || user.role === "MASTER") {
     redirect("/admin");
   }
@@ -46,6 +52,6 @@ export default async function KlientPage() {
   }
 
   // 5. Рендеринг основного дашборду
-  // У DashboardOverview тепер можна передати налаштування сповіщень з об'єкта user
-  return <DashboardOverview user={user} />;
+  // Тепер і user, і telegramData визначені та передаються коректно
+  return <DashboardOverview user={user} telegramData={telegramData} />;
 }
