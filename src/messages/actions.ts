@@ -6,28 +6,50 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { pusherServer } from "@/lib/pusher";
 
+// Правило №28: Єдине джерело істини для системного акаунта
+const SYSTEM_SALON_EMAIL = "info@beautynails.com";
+
+/**
+ * ГАРАНТІЯ НАЯВНОСТІ САЛОНУ
+ * Якщо профіль "Beauty Nails" буде видалено, ця функція створить його заново
+ * при першій же спробі відправити системне повідомлення.
+ */
+async function ensureSystemUser() {
+  let systemUser = await prisma.user.findUnique({
+    where: { email: SYSTEM_SALON_EMAIL },
+  });
+
+  if (!systemUser) {
+    systemUser = await prisma.user.create({
+      data: {
+        email: SYSTEM_SALON_EMAIL,
+        firstName: "Beauty",
+        lastName: "Nails",
+        role: "ADMIN",
+        image: "/logo.png",
+      },
+    });
+  }
+
+  return systemUser;
+}
+
 export async function getContacts() {
   const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email) {
-    return [];
-  }
+  if (!session?.user?.email) return [];
 
   const currentUser = await prisma.user.findUnique({
     where: { email: session.user.email },
   });
 
-  if (!currentUser) {
-    return [];
-  }
+  if (!currentUser) return [];
 
   let users;
 
   if (currentUser.role === "CLIENT") {
+    // Клієнти бачать тільки Адмінів (включаючи системний профіль Beauty Nails)
     users = await prisma.user.findMany({
-      where: {
-        role: "ADMIN",
-      },
+      where: { role: "ADMIN" },
       select: {
         id: true,
         firstName: true,
@@ -37,12 +59,9 @@ export async function getContacts() {
       },
     });
   } else {
+    // Адміни та Майстри бачать усіх, крім себе
     users = await prisma.user.findMany({
-      where: {
-        id: {
-          not: currentUser.id,
-        },
-      },
+      where: { id: { not: currentUser.id } },
       select: {
         id: true,
         firstName: true,
@@ -70,9 +89,7 @@ export async function getContacts() {
             { senderId: user.id, receiverId: currentUser.id },
           ],
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: { createdAt: "desc" },
       });
 
       return {
@@ -97,7 +114,6 @@ export async function getContacts() {
 
 export async function getMessages(chatPartnerId: string) {
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.email) return [];
 
   const currentUser = await prisma.user.findUnique({
@@ -113,9 +129,7 @@ export async function getMessages(chatPartnerId: string) {
         { senderId: chatPartnerId, receiverId: currentUser.id },
       ],
     },
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: { createdAt: "asc" },
   });
 
   return messages.map((msg) => ({
@@ -131,7 +145,6 @@ export async function getMessages(chatPartnerId: string) {
 
 export async function markAsRead(senderId: string) {
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.email) return;
 
   const currentUser = await prisma.user.findUnique({
@@ -146,17 +159,51 @@ export async function markAsRead(senderId: string) {
       receiverId: currentUser.id,
       isRead: false,
     },
-    data: {
-      isRead: true,
-    },
+    data: { isRead: true },
   });
 
   revalidatePath("/dashboard");
 }
 
-export async function sendMessage(receiverId: string, text: string) {
+/**
+ * ВІДПРАВКА СИСТЕМНОГО ПОВІДОМЛЕННЯ
+ * Використовується для сповіщень про статус запису (від імені Beauty Nails)
+ */
+export async function sendSystemMessage(receiverId: string, text: string) {
   const session = await getServerSession(authOptions);
 
+  if (!session?.user?.email || !text.trim() || !receiverId) {
+    return { error: "Немає доступу або бракує даних" };
+  }
+
+  try {
+    const salon = await ensureSystemUser();
+
+    const newMessage = await prisma.message.create({
+      data: {
+        text,
+        senderId: salon.id,
+        receiverId,
+      },
+    });
+
+    await pusherServer.trigger(`chat-${receiverId}`, "new-message", {
+      id: newMessage.id,
+      text: newMessage.text,
+      senderId: salon.id,
+      createdAt: newMessage.createdAt,
+    });
+
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("System message error:", error);
+    return { error: "Не вдалося надіслати" };
+  }
+}
+
+export async function sendMessage(receiverId: string, text: string) {
+  const session = await getServerSession(authOptions);
   if (!session?.user?.email || !text.trim()) return;
 
   const currentUser = await prisma.user.findUnique({
@@ -221,42 +268,9 @@ export async function deleteOldMessages() {
 
   const deleted = await prisma.message.deleteMany({
     where: {
-      createdAt: {
-        lt: sixtyDaysAgo,
-      },
+      createdAt: { lt: sixtyDaysAgo },
     },
   });
 
   return deleted.count;
-}
-
-export async function sendSystemMessage(receiverId: string, text: string) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.email || !text.trim() || !receiverId) {
-    return { error: "Немає доступу або бракує даних" };
-  }
-
-  try {
-    const newMessage = await prisma.message.create({
-      data: {
-        text,
-        senderId: "system_beauty_nails",
-        receiverId,
-      },
-    });
-
-    await pusherServer.trigger(`chat-${receiverId}`, "new-message", {
-      id: newMessage.id,
-      text: newMessage.text,
-      senderId: "system_beauty_nails",
-      createdAt: newMessage.createdAt,
-    });
-
-    revalidatePath("/dashboard");
-
-    return { success: true };
-  } catch (error) {
-    return { error: "Не вдалося надіслати" };
-  }
 }

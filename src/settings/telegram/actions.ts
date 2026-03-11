@@ -3,8 +3,37 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth/auth-options";
 import prisma from "@/lib/prisma";
-import { generateTelegramLink } from "./telegram-logic";
-import { sendMessage } from "./telegram-logic";
+import { revalidatePath } from "next/cache";
+import { generateTelegramLink, sendMessage } from "./telegram-logic";
+
+const SYSTEM_SALON_EMAIL = "info@beautynails.com";
+
+/**
+ * ГАРАНТІЯ НАЯВНОСТІ СИСТЕМНОГО АКАУНТА
+ */
+async function ensureSystemUser() {
+  let systemUser = await prisma.user.findUnique({
+    where: { email: SYSTEM_SALON_EMAIL },
+  });
+
+  if (!systemUser) {
+    systemUser = await prisma.user.create({
+      data: {
+        email: SYSTEM_SALON_EMAIL,
+        firstName: "Beauty",
+        lastName: "Nails",
+        role: "ADMIN",
+        emailVerified: true,
+        image: "/logo.png",
+      },
+    });
+  }
+  return systemUser;
+}
+
+/**
+ * ОТРИМАННЯ СТАТУСУ ТЕЛЕГРАМ ДЛЯ КАБІНЕТУ
+ */
 export async function getTelegramData() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
@@ -15,7 +44,6 @@ export async function getTelegramData() {
   });
 
   if (!user) return null;
-
   const link = await generateTelegramLink(user.id);
 
   return {
@@ -25,6 +53,9 @@ export async function getTelegramData() {
   };
 }
 
+/**
+ * ВІДКЛЮЧЕННЯ ТЕЛЕГРАМ
+ */
 export async function disconnectTelegram() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return { error: "Не авторизовано" };
@@ -34,9 +65,14 @@ export async function disconnectTelegram() {
     data: { telegramChatId: null, telegramUsername: null },
   });
 
+  revalidatePath("/dashboard/settings");
   return { success: true };
 }
 
+/**
+ * МАСОВА РОЗСИЛКА КЛІЄНТАМ
+ * Виправлено: використано AND для множинної перевірки одного поля
+ */
 export async function sendBroadcastToClients(text: string) {
   const session = await getServerSession(authOptions);
 
@@ -45,56 +81,39 @@ export async function sendBroadcastToClients(text: string) {
   }
 
   try {
-    // Шукаємо клієнтів, у яких:
-    // 1. Є Telegram
-    // 2. УВІМКНЕНО тумблер промоакцій
     const clients = await prisma.user.findMany({
       where: {
         role: "CLIENT",
-        notifyPromotions: true, // ОСЬ ЦЕЙ ФІЛЬТР
-        telegramChatId: { not: null },
+        notifyPromotions: true,
+        // Правило №42: Використовуємо AND, щоб уникнути дублювання ключів
+        AND: [
+          { telegramChatId: { not: null } },
+          { telegramChatId: { not: "" } },
+        ],
       },
-      select: { id: true, telegramChatId: true },
     });
 
     if (clients.length === 0) {
-      return { error: "Немає підключених клієнтів, які дозволили розсилку." };
+      return { error: "Немає підключених клієнтів з дозволом на розсилку." };
     }
 
+    const admin = await ensureSystemUser();
     let successCount = 0;
-    const adminId = (
-      await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { id: true },
-      })
-    )?.id;
 
     const sendPromises = clients.map(async (client) => {
-      // А) Відправляємо в Telegram
       try {
         await sendMessage(client.telegramChatId!, text);
         successCount++;
-      } catch (e) {
-        console.error(`Помилка Telegram для ${client.id}:`, e);
-      }
 
-      // Б) Записуємо у внутрішній чат (завжди, щоб історія була в додатку)
-      if (adminId) {
         await prisma.message.create({
-          data: {
-            text: text,
-            senderId: adminId,
-            receiverId: client.id,
-          },
+          data: { text, senderId: admin.id, receiverId: client.id },
         });
+      } catch (e) {
+        console.error(`Помилка розсилки для ${client.id}:`, e);
       }
     });
 
     await Promise.allSettled(sendPromises);
-
-    await prisma.telegramBroadcast.create({
-      data: { text, recipientCount: successCount },
-    });
 
     return { success: true, count: successCount };
   } catch (error) {
@@ -103,39 +122,56 @@ export async function sendBroadcastToClients(text: string) {
   }
 }
 
-// 2. СИСТЕМНЕ СПОВІЩЕННЯ ПРО ЗАПИС (Створено/Підтверджено/Скасовано)
-// Цю функцію ми будемо викликати при зміні статусу запису
-export async function sendAppointmentNotification(
-  clientId: string,
-  text: string,
+/**
+ * УНІВЕРСАЛЬНЕ СПОВІЩЕННЯ ПРО ЗАПИС
+ */
+export async function sendAppointmentUpdateNotification(
+  appointmentId: string,
+  type: "CREATED" | "CONFIRMED" | "CANCELLED",
 ) {
   try {
-    const client = await prisma.user.findUnique({
-      where: { id: clientId },
-      select: { id: true, telegramChatId: true, notifyAppointments: true },
+    const app = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        client: true,
+        service: true,
+        master: { include: { user: true } },
+      },
     });
 
-    if (!client) return;
+    if (!app || !app.client.telegramChatId) return;
 
-    // КРОК 1: Завжди пишемо у внутрішній чат
-    // (Від імені системи/адміна - тут треба знати ID адміна або зробити системного юзера)
-    const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+    const date = new Date(app.dateTime).toLocaleDateString("uk-UA", {
+      day: "numeric",
+      month: "long",
+    });
+    const time = new Date(app.dateTime).toLocaleTimeString("uk-UA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    if (admin) {
-      await prisma.message.create({
-        data: {
-          text: text,
-          senderId: admin.id,
-          receiverId: client.id,
-        },
-      });
+    let message = "";
+    if (type === "CREATED") {
+      message = `✨ *Вітаємо, ${app.client.firstName}!* \n\nВи успішно записані на *${app.service.name}*.\n📅 Дата: ${date}\n⏰ Час: ${time}\n👤 Майстер: ${app.master.user.firstName}\n\nЗ нетерпінням чекаємо на зустріч! 💖`;
+    } else if (type === "CONFIRMED") {
+      message = `✅ *Запис підтверджено!*\n\nВаш візит на *${date}* о *${time}* успішно підтверджено. Послуга: ${app.service.name}. До зустрічі! ✨`;
+    } else if (type === "CANCELLED") {
+      message = `❌ *Запис скасовано*\n\nНа жаль, Ваш запис на *${date}* о *${time}* було скасовано. Якщо у Вас виникли питання — ми на зв'язку. 🌸`;
     }
 
-    // КРОК 2: Відправляємо в Telegram, тільки якщо клієнт дозволив
-    if (client.telegramChatId && client.notifyAppointments) {
-      await sendMessage(client.telegramChatId, text);
+    if (app.client.notifyAppointments) {
+      await sendMessage(app.client.telegramChatId, message);
     }
+
+    const admin = await ensureSystemUser();
+    await prisma.message.create({
+      data: {
+        text: message.replace(/\*/g, ""),
+        senderId: admin.id,
+        receiverId: app.client.id,
+      },
+    });
   } catch (error) {
-    console.error("Appointment Notification Error:", error);
+    console.error("Notification Error:", error);
   }
 }

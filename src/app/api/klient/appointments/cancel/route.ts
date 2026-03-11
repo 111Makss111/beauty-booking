@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+// Імпортуємо функцію сповіщень
+import { sendAppointmentUpdateNotification } from "@/settings/telegram/actions";
 
 export async function PATCH(request: Request) {
   try {
@@ -13,11 +15,13 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Оновлюємо статус на скасований
     const updatedAppointment = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: "CANCELLED" },
     });
+
+    // НАДСИЛАЄМО СПОВІЩЕННЯ ПРО СКАСУВАННЯ
+    await sendAppointmentUpdateNotification(appointmentId, "CANCELLED");
 
     return NextResponse.json(updatedAppointment);
   } catch (error) {

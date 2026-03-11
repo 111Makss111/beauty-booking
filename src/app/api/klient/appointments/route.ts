@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+// Імпортуємо функцію сповіщень
+import { sendAppointmentUpdateNotification } from "@/settings/telegram/actions";
 
 export async function POST(request: Request) {
   try {
@@ -16,9 +18,7 @@ export async function POST(request: Request) {
     } = body;
 
     const masterProfile = await prisma.masterProfile.findUnique({
-      where: {
-        userId: masterUserId,
-      },
+      where: { userId: masterUserId },
     });
 
     if (!masterProfile) {
@@ -36,20 +36,10 @@ export async function POST(request: Request) {
     const overlappingAppointment = await prisma.appointment.findFirst({
       where: {
         masterId: masterProfile.id,
-        status: {
-          in: ["PENDING", "CONFIRMED"],
-        },
+        status: { in: ["PENDING", "CONFIRMED"] },
         AND: [
-          {
-            dateTime: {
-              lt: endDateTime,
-            },
-          },
-          {
-            endTime: {
-              gt: startDateTime,
-            },
-          },
+          { dateTime: { lt: endDateTime } },
+          { endTime: { gt: startDateTime } },
         ],
       },
     });
@@ -78,10 +68,12 @@ export async function POST(request: Request) {
       },
     });
 
+    // НАДСИЛАЄМО СПОВІЩЕННЯ ПРО НОВИЙ ЗАПИС
+    await sendAppointmentUpdateNotification(appointment.id, "CREATED");
+
     return NextResponse.json(appointment);
   } catch (error) {
     console.error(error);
-
     return NextResponse.json(
       { error: "Помилка створення запису" },
       { status: 500 },
