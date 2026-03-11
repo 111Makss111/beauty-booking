@@ -1,60 +1,57 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import ToggleSwitch from "./ui/toggle-switch";
-import {
-  getNotificationSettings,
-  updateNotificationSetting,
-} from "@/settings/actions";
+import { updateNotificationSetting } from "@/settings/actions/notifications";
 
-export default function NotificationsBlock() {
-  const [appointments, setAppointments] = useState(true);
-  const [promotions, setPromotions] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+// Правило №99: Складний тип винесено в інтерфейс
+interface NotificationSettings {
+  notifyAppointments: boolean;
+  notifyPromotions: boolean;
+}
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await getNotificationSettings();
-        if (data) {
-          setAppointments(data.notifyAppointments);
-          setPromotions(data.notifyPromotions);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+interface NotificationsBlockProps {
+  initialSettings: NotificationSettings; // Правило №105: Дані з сервера
+}
 
-    fetchSettings();
-  }, []);
+export default function NotificationsBlock({
+  initialSettings,
+}: NotificationsBlockProps) {
+  const [settings, setSettings] =
+    useState<NotificationSettings>(initialSettings);
+  const [isUpdating, setIsUpdating] = useState<
+    keyof NotificationSettings | null
+  >(null);
 
-  const handleToggle = async (
-    field: "notifyAppointments" | "notifyPromotions",
-    currentValue: boolean,
-    setter: (val: boolean) => void,
-  ) => {
-    const newValue = !currentValue;
-    setter(newValue);
+  const handleToggle = async (field: keyof NotificationSettings) => {
+    const oldValue = settings[field];
+    const newValue = !oldValue;
+
+    // Оптимістичне оновлення UI
+    setSettings((prev) => ({ ...prev, [field]: newValue }));
+    setIsUpdating(field);
 
     try {
-      await updateNotificationSetting(field, newValue);
+      const result = await updateNotificationSetting(field, newValue);
+
+      // Правило №42: Обробка помилки з сервера
+      if (result && "error" in result) {
+        throw new Error(result.error);
+      }
+
+      toast.success("Налаштування збережено");
     } catch (error) {
-      console.error(error);
-      setter(currentValue);
+      // Правило №38: Звужуємо тип unknown без використання any
+      const errorMessage =
+        error instanceof Error ? error.message : "Сталася помилка";
+
+      setSettings((prev) => ({ ...prev, [field]: oldValue }));
+      toast.error(errorMessage);
+    } finally {
+      setIsUpdating(null);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="bg-white/70 backdrop-blur-md rounded-[2rem] p-8 shadow-sm border border-white h-full flex items-center justify-center">
-        <div className="text-slate-400 font-medium">
-          Завантаження налаштувань...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white/70 backdrop-blur-md rounded-[2rem] p-8 shadow-sm border border-white h-full flex flex-col gap-6">
@@ -65,7 +62,7 @@ export default function NotificationsBlock() {
         <div>
           <h3 className="text-slate-800 font-bold text-xl">Сповіщення</h3>
           <p className="text-sm text-slate-500 font-medium">
-            Керуйте тим, які повідомлення ви отримуєте
+            Керуйте вашими повідомленнями
           </p>
         </div>
       </div>
@@ -77,15 +74,14 @@ export default function NotificationsBlock() {
               Нагадування про записи
             </h4>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Отримуйте повідомлення за 24 години та за 2 години до вашого
-              візиту, а також інформацію про підтвердження або скасування.
+              Підтвердження, скасування та нагадування за 24 і 2 години до
+              візиту.
             </p>
           </div>
           <ToggleSwitch
-            checked={appointments}
-            onChange={() =>
-              handleToggle("notifyAppointments", appointments, setAppointments)
-            }
+            checked={settings.notifyAppointments}
+            disabled={isUpdating === "notifyAppointments"}
+            onChange={() => handleToggle("notifyAppointments")}
           />
         </div>
 
@@ -97,15 +93,13 @@ export default function NotificationsBlock() {
               Акції та пропозиції
             </h4>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Отримуйте інформацію про знижки, нові послуги та спеціальні
-              пропозиції від нашого салону.
+              Інформація про знижки та спеціальні пропозиції нашого салону.
             </p>
           </div>
           <ToggleSwitch
-            checked={promotions}
-            onChange={() =>
-              handleToggle("notifyPromotions", promotions, setPromotions)
-            }
+            checked={settings.notifyPromotions}
+            disabled={isUpdating === "notifyPromotions"}
+            onChange={() => handleToggle("notifyPromotions")}
           />
         </div>
       </div>

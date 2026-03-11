@@ -4,12 +4,28 @@ import { useSession } from "next-auth/react";
 import WorkingHours from "./working-hours";
 import TelegramSettings from "./telegram-settings";
 import SpecialOffers from "./special-offers";
+import { DaySchedule } from "@/settings/actions/salon"; // Правило №99: імпортуємо тип
 
-export default function SettingsLayout() {
+// Додаємо інтерфейс для пропсів
+interface SettingsLayoutProps {
+  initialSchedule?: DaySchedule[];
+  initialAllowWeekends?: boolean;
+}
+
+export default function SettingsLayout({
+  initialSchedule = [],
+  initialAllowWeekends = false,
+}: SettingsLayoutProps) {
   const { data: session } = useSession();
   const role = session?.user?.role;
   const isAdmin = role === "ADMIN";
   const isMaster = role === "MASTER";
+
+  // Підстраховка: якщо масив порожній (наприклад, ще немає записів у БД)
+  const safeSchedule =
+    initialSchedule.length > 0
+      ? initialSchedule
+      : Array(7).fill({ isOpen: true, start: "09:00", end: "18:00" });
 
   return (
     <div className="w-full max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
@@ -17,7 +33,11 @@ export default function SettingsLayout() {
         {/* Робочі години бачить ТІЛЬКИ адмін */}
         {isAdmin && (
           <div className="lg:col-span-5 w-full">
-            <WorkingHours />
+            {/* Передаємо дані у компонент! */}
+            <WorkingHours
+              initialSchedule={safeSchedule}
+              initialAllowWeekends={initialAllowWeekends}
+            />
           </div>
         )}
 

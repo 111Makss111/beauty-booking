@@ -4,6 +4,7 @@ import { useState } from "react";
 import ServicesToolbar from "./services-toolbar";
 import ServicesTable from "./services-table";
 import ServiceModal from "./service-modal";
+import ExtraOptionsManager from "../services/extra-options-manager";
 
 export default function ServicesLayout() {
   const [showOnlyActive, setShowOnlyActive] = useState<boolean>(false);
@@ -41,6 +42,8 @@ export default function ServicesLayout() {
           onEditClick={handleEditService}
         />
       </div>
+
+      <ExtraOptionsManager />
 
       {isModalOpen && (
         <ServiceModal

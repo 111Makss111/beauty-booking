@@ -6,6 +6,9 @@ import Sidebar from "./sidebar";
 import SettingsLayout from "./settings/settings-layout";
 import ProfileLayout from "./profile/profile-layout";
 import MessagesLayout from "./messages/messages-layout";
+import BookingContainer from "./booking/booking-container";
+// 1. ДОДАЛИ ІМПОРТ НОВОГО КОМПОНЕНТА
+import ClientAppointments from "./appointments/client-appointments";
 
 interface DashboardOverviewProps {
   user: {
@@ -13,6 +16,9 @@ interface DashboardOverviewProps {
     lastName: string;
     email: string;
     image?: string | null;
+    id: string; // <-- Нам потрібен цей ID!
+    notifyAppointments: boolean;
+    notifyPromotions: boolean;
   };
 }
 
@@ -27,8 +33,20 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "book":
+        return <BookingContainer clientId={user.id} />;
+      // 2. ДОДАЛИ ВІДОБРАЖЕННЯ МОЇХ ЗАПИСІВ
+      case "appointments":
+        return <ClientAppointments clientId={user.id} />;
       case "settings":
-        return <SettingsLayout />;
+        return (
+          <SettingsLayout
+            notificationSettings={{
+              notifyAppointments: user.notifyAppointments,
+              notifyPromotions: user.notifyPromotions,
+            }}
+          />
+        );
       case "profile":
         return <ProfileLayout />;
       case "messages":
@@ -40,9 +58,7 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
               Привіт, <span className="text-pink-500">{user.firstName}</span>!
               👋
             </h1>
-            <p className="text-slate-500 mb-8">
-              Зараз активна вкладка: {activeTab}
-            </p>
+            <p className="text-slate-500">Оберіть розділ у меню</p>
           </div>
         );
     }
@@ -50,6 +66,7 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-pink-50 to-rose-100 overflow-hidden">
+      {/* Кнопка мобільного меню */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
         className="lg:hidden fixed top-4 right-4 z-40 p-3 bg-white/80 backdrop-blur-md rounded-full shadow-md text-pink-500 hover:bg-pink-50 transition-colors"
@@ -57,6 +74,7 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
         <Menu className="w-6 h-6" />
       </button>
 
+      {/* Оверлей мобільного меню */}
       {isMobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40"
@@ -64,6 +82,7 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
         />
       )}
 
+      {/* Сайдбар */}
       <div
         className={`
           fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out
@@ -85,8 +104,9 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
         />
       </div>
 
+      {/* Основний контент */}
       <main className="flex-1 overflow-y-auto p-4 lg:p-8 flex flex-col mt-16 lg:mt-0">
-        {renderContent()}
+        <div className="max-w-[1600px] mx-auto w-full">{renderContent()}</div>
       </main>
     </div>
   );

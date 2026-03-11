@@ -1,111 +1,88 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Clock,
-  ToggleLeft,
-  ToggleRight,
-  Save,
-  Check,
-  Loader2,
-} from "lucide-react";
-import {
-  getWorkingHours,
-  updateWorkingHours,
-  DaySchedule,
-} from "@/settings/actions";
+import { useState } from "react";
+import { Clock, Save, Check, Loader2 } from "lucide-react";
+import toast from "react-hot-toast"; // Правило №44: Видимі помилки
+import { updateWorkingHours, DaySchedule } from "@/settings/actions/salon"; // Оновлений шлях
 import { DayRow } from "./working-hours/day-row";
 
-export default function WorkingHours() {
+// Правило №99: Типи винесені окремо
+interface WorkingHoursProps {
+  initialSchedule: DaySchedule[];
+  initialAllowWeekends: boolean;
+}
+
+// Правило №28: Статичні константи винесені за межі компонента
+const DAY_NAMES = [
+  "Понеділок",
+  "Вівторок",
+  "Середа",
+  "Четвер",
+  "П'ятниця",
+  "Субота",
+  "Неділя",
+];
+
+const TIME_SLOTS = Array.from({ length: 24 * 2 }, (_, i) => {
+  const hours = Math.floor(i / 2)
+    .toString()
+    .padStart(2, "0");
+  const minutes = i % 2 === 0 ? "00" : "30";
+  return `${hours}:${minutes}`;
+});
+
+export default function WorkingHours({
+  initialSchedule,
+  initialAllowWeekends,
+}: WorkingHoursProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [allowWeekends, setAllowWeekends] = useState(false);
-  const [schedule, setSchedule] = useState<DaySchedule[]>([
-    { isOpen: true, start: "09:00", end: "18:00" },
-    { isOpen: true, start: "09:00", end: "18:00" },
-    { isOpen: true, start: "09:00", end: "18:00" },
-    { isOpen: true, start: "09:00", end: "18:00" },
-    { isOpen: true, start: "09:00", end: "18:00" },
-    { isOpen: true, start: "10:00", end: "16:00" },
-    { isOpen: false, start: "09:00", end: "18:00" },
-  ]);
-
-  const dayNames = [
-    "Понеділок",
-    "Вівторок",
-    "Середа",
-    "Четвер",
-    "П'ятниця",
-    "Субота",
-    "Неділя",
-  ];
-
-  useEffect(() => {
-    async function loadData() {
-      const data = await getWorkingHours();
-      if (data) {
-        setAllowWeekends(data.allowWeekendBooking);
-        if (data.workingDays && data.workingDays.length > 0) {
-          const sortedDays = [...data.workingDays].sort(
-            (a, b) => a.dayOfWeek - b.dayOfWeek,
-          );
-          setSchedule(
-            sortedDays.map((d) => ({
-              isOpen: d.isOpen,
-              start: d.startTime,
-              end: d.endTime,
-            })),
-          );
-        }
-      }
-      setIsLoading(false);
-    }
-    loadData();
-  }, []);
-
-  const timeSlots = Array.from({ length: 24 * 2 }, (_, i) => {
-    const hours = Math.floor(i / 2)
-      .toString()
-      .padStart(2, "0");
-    const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hours}:${minutes}`;
-  });
+  // Правило №105: Використовуємо дані з сервера, без useEffect
+  const [allowWeekends, setAllowWeekends] = useState(initialAllowWeekends);
+  const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule);
 
   const toggleDay = (index: number) => {
-    const newSchedule = [...schedule];
-    newSchedule[index].isOpen = !newSchedule[index].isOpen;
-    setSchedule(newSchedule);
+    setSchedule((prev) => {
+      const newSchedule = [...prev];
+      newSchedule[index].isOpen = !newSchedule[index].isOpen;
+      return newSchedule;
+    });
     setIsSaved(false);
   };
 
   const updateTime = (index: number, field: "start" | "end", value: string) => {
-    const newSchedule = [...schedule];
-    newSchedule[index][field] = value;
-    setSchedule(newSchedule);
+    setSchedule((prev) => {
+      const newSchedule = [...prev];
+      newSchedule[index][field] = value;
+      return newSchedule;
+    });
     setIsSaved(false);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateWorkingHours(schedule, allowWeekends);
+      // Працюємо з нашою новою об'єктною структурою
+      const result = await updateWorkingHours(schedule, allowWeekends);
+
+      if (result && !result.success) {
+        throw new Error(result.error || "Не вдалося зберегти графік");
+      }
+
       setIsSaved(true);
+      toast.success("Графік успішно збережено!");
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
-      console.error("Помилка збереження:", error);
+      // Правило №38 та №44: Безпечне виведення помилки без any
+      const message =
+        error instanceof Error ? error.message : "Сталася помилка";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-sm h-[600px] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
-      </div>
-    );
-  }
+  // Правило №102: Блок if (isLoading) повністю видалено — він більше не потрібен
 
   return (
     <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-sm flex flex-col h-full">
@@ -121,12 +98,12 @@ export default function WorkingHours() {
       <div className="space-y-4 flex-1">
         {schedule.map((item, index) => (
           <DayRow
-            key={dayNames[index]}
-            dayName={dayNames[index]}
+            key={DAY_NAMES[index]}
+            dayName={DAY_NAMES[index]}
             isOpen={item.isOpen}
             start={item.start}
             end={item.end}
-            timeSlots={timeSlots}
+            timeSlots={TIME_SLOTS}
             onToggle={() => toggleDay(index)}
             onTimeChange={(field, value) => updateTime(index, field, value)}
           />

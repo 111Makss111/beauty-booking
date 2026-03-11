@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth/auth-options";
 import prisma from "@/lib/prisma";
 import { generateTelegramLink } from "./telegram-logic";
-
+import { sendMessage } from "./telegram-logic";
 export async function getTelegramData() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
@@ -41,63 +41,101 @@ export async function sendBroadcastToClients(text: string) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email || session.user.role !== "ADMIN") {
-    return {
-      error: "Доступ заборонено. Тільки адміністратор може робити розсилку.",
-    };
-  }
-
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) {
-    return { error: "Токен бота не налаштовано в системі." };
+    return { error: "Тільки адміністратор може робити розсилку." };
   }
 
   try {
+    // Шукаємо клієнтів, у яких:
+    // 1. Є Telegram
+    // 2. УВІМКНЕНО тумблер промоакцій
     const clients = await prisma.user.findMany({
       where: {
+        role: "CLIENT",
+        notifyPromotions: true, // ОСЬ ЦЕЙ ФІЛЬТР
         telegramChatId: { not: null },
       },
-      select: { telegramChatId: true },
+      select: { id: true, telegramChatId: true },
     });
 
     if (clients.length === 0) {
-      return { error: "Немає підключених клієнтів для розсилки." };
+      return { error: "Немає підключених клієнтів, які дозволили розсилку." };
     }
 
     let successCount = 0;
+    const adminId = (
+      await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      })
+    )?.id;
 
     const sendPromises = clients.map(async (client) => {
-      if (!client.telegramChatId) return;
-
-      const response = await fetch(
-        `https://api.telegram.org/bot${botToken}/sendMessage`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: client.telegramChatId,
-            text: text,
-            parse_mode: "HTML",
-          }),
-        },
-      );
-
-      if (response.ok) {
+      // А) Відправляємо в Telegram
+      try {
+        await sendMessage(client.telegramChatId!, text);
         successCount++;
+      } catch (e) {
+        console.error(`Помилка Telegram для ${client.id}:`, e);
+      }
+
+      // Б) Записуємо у внутрішній чат (завжди, щоб історія була в додатку)
+      if (adminId) {
+        await prisma.message.create({
+          data: {
+            text: text,
+            senderId: adminId,
+            receiverId: client.id,
+          },
+        });
       }
     });
 
     await Promise.allSettled(sendPromises);
 
     await prisma.telegramBroadcast.create({
-      data: {
-        text: text,
-        recipientCount: successCount,
-      },
+      data: { text, recipientCount: successCount },
     });
 
     return { success: true, count: successCount };
   } catch (error) {
-    console.error("Помилка масової розсилки Telegram:", error);
-    return { error: "Сталася помилка при відправці повідомлень." };
+    console.error("Broadcast Error:", error);
+    return { error: "Помилка при виконанні розсилки." };
+  }
+}
+
+// 2. СИСТЕМНЕ СПОВІЩЕННЯ ПРО ЗАПИС (Створено/Підтверджено/Скасовано)
+// Цю функцію ми будемо викликати при зміні статусу запису
+export async function sendAppointmentNotification(
+  clientId: string,
+  text: string,
+) {
+  try {
+    const client = await prisma.user.findUnique({
+      where: { id: clientId },
+      select: { id: true, telegramChatId: true, notifyAppointments: true },
+    });
+
+    if (!client) return;
+
+    // КРОК 1: Завжди пишемо у внутрішній чат
+    // (Від імені системи/адміна - тут треба знати ID адміна або зробити системного юзера)
+    const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+
+    if (admin) {
+      await prisma.message.create({
+        data: {
+          text: text,
+          senderId: admin.id,
+          receiverId: client.id,
+        },
+      });
+    }
+
+    // КРОК 2: Відправляємо в Telegram, тільки якщо клієнт дозволив
+    if (client.telegramChatId && client.notifyAppointments) {
+      await sendMessage(client.telegramChatId, text);
+    }
+  } catch (error) {
+    console.error("Appointment Notification Error:", error);
   }
 }

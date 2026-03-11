@@ -194,6 +194,7 @@ export async function getCurrentUserId() {
 
   return user?.id || null;
 }
+
 export async function getChatPartner(id: string) {
   const user = await prisma.user.findUnique({
     where: { id },
@@ -213,6 +214,7 @@ export async function getChatPartner(id: string) {
     rating: user.averageRating,
   };
 }
+
 export async function deleteOldMessages() {
   const sixtyDaysAgo = new Date();
   sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
@@ -226,4 +228,35 @@ export async function deleteOldMessages() {
   });
 
   return deleted.count;
+}
+
+export async function sendSystemMessage(receiverId: string, text: string) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.email || !text.trim() || !receiverId) {
+    return { error: "Немає доступу або бракує даних" };
+  }
+
+  try {
+    const newMessage = await prisma.message.create({
+      data: {
+        text,
+        senderId: "system_beauty_nails",
+        receiverId,
+      },
+    });
+
+    await pusherServer.trigger(`chat-${receiverId}`, "new-message", {
+      id: newMessage.id,
+      text: newMessage.text,
+      senderId: "system_beauty_nails",
+      createdAt: newMessage.createdAt,
+    });
+
+    revalidatePath("/dashboard");
+
+    return { success: true };
+  } catch (error) {
+    return { error: "Не вдалося надіслати" };
+  }
 }

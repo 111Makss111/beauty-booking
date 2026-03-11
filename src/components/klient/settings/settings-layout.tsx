@@ -3,7 +3,17 @@
 import TelegramCard from "./telegram-card";
 import NotificationsBlock from "./notifications-block";
 
-export default function SettingsLayout() {
+// Правило №99: Чіткий інтерфейс для пропсів
+interface SettingsLayoutProps {
+  notificationSettings: {
+    notifyAppointments: boolean;
+    notifyPromotions: boolean;
+  };
+}
+
+export default function SettingsLayout({
+  notificationSettings,
+}: SettingsLayoutProps) {
   return (
     <div className="w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-500">
       <div className="mb-8 pl-2">
@@ -16,7 +26,8 @@ export default function SettingsLayout() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <NotificationsBlock />
+          {/* Передаємо дані далі в NotificationsBlock */}
+          <NotificationsBlock initialSettings={notificationSettings} />
         </div>
 
         <div className="lg:col-span-1 flex flex-col gap-6">
