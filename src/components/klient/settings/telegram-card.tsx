@@ -11,13 +11,11 @@ export default function TelegramCard() {
   const [username, setUsername] = useState<string | null>(null);
   const [botLink, setBotLink] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Той самий "золотий ключик" для оновлення
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Вся логіка тепер живе виключно всередині ефекту
+  // Твоя оригінальна, працююча логіка
   useEffect(() => {
-    let isMounted = true; // Захист від витоку пам'яті
+    let isMounted = true;
 
     const fetchStatus = async () => {
       try {
@@ -25,30 +23,34 @@ export default function TelegramCard() {
         if (isMounted && data) {
           setIsConnected(data.isConnected);
           setUsername(data.username);
-          setBotLink(data.link);
+          setBotLink(data.link); // ТУТ ВСТАНОВЛЮЄТЬСЯ ПРАВИЛЬНЕ ПОСИЛАННЯ
         }
       } catch (error) {
         console.error(error);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchStatus();
 
-    // Якщо компонент зникне до завершення завантаження, ми скасуємо оновлення стану
     return () => {
       isMounted = false;
     };
-  }, [refreshKey]); // Ефект запуститься знову ТІЛЬКИ якщо зміниться refreshKey
+  }, [refreshKey]);
 
   const handleDisconnect = async () => {
     setIsLoading(true);
     await disconnectTelegram();
-    // Просто збільшуємо лічильник на 1, і useEffect сам зрозуміє, що треба оновити дані!
     setRefreshKey((prev) => prev + 1);
+  }; // <--- Ось тут не вистачало дужки у твоєму першому варіаннти
+
+  const handleConnectClick = () => {
+    setIsLoading(true);
+    // Даємо клієнту час перейти в бота і натиснути /start, після чого оновлюємо статус
+    setTimeout(() => {
+      setRefreshKey((prev) => prev + 1);
+    }, 5000);
   };
 
   return (
@@ -92,7 +94,7 @@ export default function TelegramCard() {
               Вимкнути
             </button>
             <a
-              href={botLink}
+              href={botLink || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 py-2.5 px-4 rounded-xl font-bold text-white bg-gradient-to-r from-pink-400 to-pink-500 shadow-md shadow-pink-200 hover:shadow-lg transition-all active:scale-95 text-center disabled:opacity-50 flex items-center justify-center"
@@ -102,10 +104,11 @@ export default function TelegramCard() {
           </>
         ) : (
           <a
-            href={botLink}
+            href={botLink || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-full py-3 px-4 rounded-xl font-bold text-white bg-[#0088cc] hover:bg-[#0077b3] shadow-md shadow-blue-200 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${isLoading ? "opacity-50 pointer-events-none" : ""}`}
+            onClick={handleConnectClick}
+            className={`w-full py-3 px-4 rounded-xl font-bold text-white bg-[#0088cc] hover:bg-[#0077b3] shadow-md shadow-blue-200 hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${isLoading || !botLink ? "opacity-50 pointer-events-none" : ""}`}
           >
             {isLoading ? "Завантаження..." : "Підключити Telegram"}
           </a>

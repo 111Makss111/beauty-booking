@@ -7,8 +7,14 @@ import SettingsLayout from "./settings/settings-layout";
 import ProfileLayout from "./profile/profile-layout";
 import MessagesLayout from "./messages/messages-layout";
 import BookingContainer from "./booking/booking-container";
-// 1. ДОДАЛИ ІМПОРТ НОВОГО КОМПОНЕНТА
 import ClientAppointments from "./appointments/client-appointments";
+
+// Правило №99: Типізація для Telegram
+interface TelegramData {
+  isConnected: boolean;
+  username: string | null;
+  link: string;
+}
 
 interface DashboardOverviewProps {
   user: {
@@ -16,13 +22,17 @@ interface DashboardOverviewProps {
     lastName: string;
     email: string;
     image?: string | null;
-    id: string; // <-- Нам потрібен цей ID!
+    id: string;
     notifyAppointments: boolean;
     notifyPromotions: boolean;
   };
+  telegramData: TelegramData | null; // <-- ДОДАЛИ ЦЕЙ РЯДОК
 }
 
-export default function DashboardOverview({ user }: DashboardOverviewProps) {
+export default function DashboardOverview({
+  user,
+  telegramData,
+}: DashboardOverviewProps) {
   const [activeTab, setActiveTab] = useState("book");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -35,7 +45,6 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
     switch (activeTab) {
       case "book":
         return <BookingContainer clientId={user.id} />;
-      // 2. ДОДАЛИ ВІДОБРАЖЕННЯ МОЇХ ЗАПИСІВ
       case "appointments":
         return <ClientAppointments clientId={user.id} />;
       case "settings":
@@ -45,6 +54,7 @@ export default function DashboardOverview({ user }: DashboardOverviewProps) {
               notifyAppointments: user.notifyAppointments,
               notifyPromotions: user.notifyPromotions,
             }}
+            telegramData={telegramData} // <-- ПЕРЕДАЄМО ДАНІ В НАЛАШТУВАННЯ
           />
         );
       case "profile":

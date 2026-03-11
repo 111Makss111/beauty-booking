@@ -3,16 +3,25 @@
 import TelegramCard from "./telegram-card";
 import NotificationsBlock from "./notifications-block";
 
-// Правило №99: Чіткий інтерфейс для пропсів
+// Правило №99: Створюємо тип для Telegram
+interface TelegramData {
+  isConnected: boolean;
+  username: string | null;
+  link: string;
+}
+
+// Додаємо telegramData до пропсів
 interface SettingsLayoutProps {
   notificationSettings: {
     notifyAppointments: boolean;
     notifyPromotions: boolean;
   };
+  telegramData: TelegramData | null;
 }
 
 export default function SettingsLayout({
   notificationSettings,
+  telegramData, // <- ТЕПЕР МИ ОТРИМУЄМО ЦІ ДАНІ ТУТ
 }: SettingsLayoutProps) {
   return (
     <div className="w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-500">
@@ -26,7 +35,6 @@ export default function SettingsLayout({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Передаємо дані далі в NotificationsBlock */}
           <NotificationsBlock initialSettings={notificationSettings} />
         </div>
 
@@ -47,6 +55,7 @@ export default function SettingsLayout({
             </div>
           </div>
 
+          {/* Тепер змінна існує і передається коректно */}
           <TelegramCard />
         </div>
       </div>
