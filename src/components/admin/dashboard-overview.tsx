@@ -13,6 +13,7 @@ import AdminAppointments from "../../components/admin/appointments/admin-appoint
 import AdminRequests from "../../components/admin/requests/admin-requests";
 // ДОДАНО: Імпорт нашої нової панелі відгуків
 import AdminReviews from "../../components/admin/reviews/admin-reviews";
+import AdminOverview from "./overview/admin-overview";
 
 interface UserData {
   id: string;
@@ -42,6 +43,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             <MessagesLayout />
           </div>
         );
+
       case "profile":
         return <AdminProfile user={user} />;
       case "services":
@@ -71,10 +73,10 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
         );
 
       // ДОДАНО: Вкладка відгуків для адміна
-      case "reviews":
+      case "overview":
         return (
-          <div className="h-[calc(100vh-160px)]">
-            <AdminReviews />
+          <div className="min-h-[calc(100vh-160px)]">
+            <AdminOverview />
           </div>
         );
 
