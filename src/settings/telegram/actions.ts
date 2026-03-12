@@ -116,7 +116,8 @@ export async function sendAppointmentUpdateNotification(
       },
     });
 
-    if (!app || !app.client.telegramChatId) return;
+    // Прибрали жорстку перевірку клієнтського Telegram, щоб пуші доходили майстрам
+    if (!app) return;
 
     const date = new Date(app.dateTime).toLocaleDateString("uk-UA", {
       day: "numeric",
@@ -127,27 +128,48 @@ export async function sendAppointmentUpdateNotification(
       minute: "2-digit",
     });
 
-    let message = "";
-    if (type === "CREATED") {
-      message = `✨ *Вітаємо!* \nВи записані на *${app.service.name}*.\n📅 ${date} о ${time}`;
-    } else if (type === "CONFIRMED") {
-      message = `✅ *Запис підтверджено!*\nЧекаємо на Вас *${date}* о *${time}*.`;
-    } else if (type === "CANCELLED") {
-      message = `❌ *Запис скасовано*\nВаш візит на *${date}* о *${time}* скасовано.`;
-    }
-
-    if (app.client.notifyAppointments) {
-      await sendMessage(app.client.telegramChatId, message);
-    }
-
     const salon = await ensureSystemUser();
-    await prisma.message.create({
-      data: {
-        text: message.replace(/\*/g, ""),
-        senderId: salon.id,
-        receiverId: app.client.id,
-      },
-    });
+
+    if (type === "CREATED") {
+      // Клієнту нічого не пишемо. Відправляємо тільки Майстру.
+      const masterMessage = `🔥 *Новий запис (Очікує підтвердження)!*\n\n👤 *Клієнт:* ${app.client.firstName} ${app.client.lastName || ""}\n📞 *Телефон:* ${app.client.phone || "Не вказано"}\n💅 *Послуга:* ${app.service.name}\n🗓 *Коли:* ${date} о ${time}\n\n⏳ Будь ласка, зайдіть у кабінет та підтвердіть візит.`;
+
+      if (app.master.user.telegramChatId) {
+        await sendMessage(app.master.user.telegramChatId, masterMessage);
+      }
+    } else if (type === "CONFIRMED") {
+      // Відправляємо клієнту красиве підтвердження
+      const clientMessage = `🎉 *Ваш запис підтверджено!*\n\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date}\n⏰ *Час:* ${time}\n👩‍🎨 *Майстер:* ${app.master.user.firstName}\n\n📍 Чекаємо на Вас у *Beauty Nails*! Якщо ваші плани зміняться, будь ласка, попередьте нас заздалегідь. 🌸`;
+
+      if (app.client.telegramChatId && app.client.notifyAppointments) {
+        await sendMessage(app.client.telegramChatId, clientMessage);
+      }
+
+      // Дублюємо у внутрішній чат
+      await prisma.message.create({
+        data: {
+          text: clientMessage.replace(/\*/g, ""),
+          senderId: salon.id,
+          receiverId: app.client.id,
+        },
+      });
+    } else if (type === "CANCELLED") {
+      // Відправляємо клієнту скасування
+      const clientMessage = `😔 *Запис скасовано*\n\nВаш візит на *${date}* о *${time}* було скасовано. Будемо раді бачити Вас іншого разу! 🌸`;
+
+      if (app.client.telegramChatId && app.client.notifyAppointments) {
+        await sendMessage(app.client.telegramChatId, clientMessage);
+      }
+
+      // Дублюємо у внутрішній чат
+      await prisma.message.create({
+        data: {
+          text: clientMessage.replace(/\*/g, ""),
+          senderId: salon.id,
+          receiverId: app.client.id,
+        },
+      });
+    }
   } catch (error) {
     console.error(error);
   }
