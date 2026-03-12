@@ -9,9 +9,10 @@ import ServicesLayout from "./neils/services-layout";
 import MastersLayout from "./masters/masters-layout";
 import SettingsLayout from "./settings/settings-layout";
 import MasterAppointments from "../../components/master/appointments/master-appointments";
-import AdminAppointments from "../../components/admin/appointments/admin-appointments"; // Наш новий глобальний компонент
-// 1. ДОДАЛИ ІМПОРТ ПАНЕЛІ ЗАЯВОК
+import AdminAppointments from "../../components/admin/appointments/admin-appointments";
 import AdminRequests from "../../components/admin/requests/admin-requests";
+// ДОДАНО: Імпорт нашої нової панелі відгуків
+import AdminReviews from "../../components/admin/reviews/admin-reviews";
 
 interface UserData {
   id: string;
@@ -49,6 +50,8 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
         return <MastersLayout />;
       case "settings":
         return <SettingsLayout />;
+
+      // Залишили тільки ОДИН правильний case для записів
       case "appointments":
         return (
           <div className="h-[calc(100vh-160px)]">
@@ -60,19 +63,18 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </div>
         );
 
-      // Підключаємо панель записів майстра
-      case "appointments":
-        return (
-          <div className="h-[calc(100vh-160px)]">
-            <MasterAppointments />
-          </div>
-        );
-
-      // 2. ПІДКЛЮЧАЄМО ВКЛАДКУ ЗАЯВОК ДЛЯ АДМІНА
       case "requests":
         return (
           <div className="h-[calc(100vh-160px)]">
             <AdminRequests />
+          </div>
+        );
+
+      // ДОДАНО: Вкладка відгуків для адміна
+      case "reviews":
+        return (
+          <div className="h-[calc(100vh-160px)]">
+            <AdminReviews />
           </div>
         );
 
@@ -94,7 +96,6 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
     }
   };
 
-  // Шукаємо ім'я активної вкладки для хедера
   const getHeaderTitle = () => {
     const titles: Record<string, string> = {
       overview: "Панель керування",
@@ -105,13 +106,13 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       services: "Послуги",
       profile: "Мій профіль",
       settings: "Налаштування",
+      reviews: "Відгуки", // ДОДАНО заголовок для хедера
     };
     return titles[activeTab] || "Кабінет";
   };
 
   return (
     <div className="flex min-h-screen bg-[#fdf8fa]">
-      {/* Кнопка мобільного меню */}
       <button
         onClick={() => setIsMobileMenuOpen(true)}
         className="lg:hidden fixed top-4 right-4 z-40 p-3 bg-white rounded-full shadow-md text-pink-500 hover:bg-pink-50 transition-colors"
@@ -119,7 +120,6 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
         <Menu className="w-6 h-6" />
       </button>
 
-      {/* Оверлей */}
       {isMobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40"
@@ -127,7 +127,6 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
         />
       )}
 
-      {/* Підключаємо твій Sidebar */}
       <AdminSidebar
         user={user}
         activeTab={activeTab}

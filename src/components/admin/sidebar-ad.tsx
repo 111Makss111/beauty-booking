@@ -11,13 +11,16 @@ import {
   UserCog,
   Settings,
   LogOut,
+  Star, // ДОДАНО: Іконка для відгуків
 } from "lucide-react";
 
+// ДОДАНО: Вкладка "Відгуки"
 const menuItems = [
   { id: "overview", name: "Панель керування", icon: LayoutDashboard },
   { id: "appointments", name: "Записи", icon: CalendarCheck },
   { id: "requests", name: "Заявки", icon: BellRing },
   { id: "messages", name: "Повідомлення", icon: MessageSquare },
+  { id: "reviews", name: "Відгуки", icon: Star },
   { id: "masters", name: "Майстри", icon: Users },
   { id: "services", name: "Послуги", icon: Sparkles },
   { id: "profile", name: "Мій профіль", icon: UserCog },
@@ -34,15 +37,34 @@ interface AdminSidebarProps {
   user: UserData;
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  // ДОДАНО: Пропси для мобільного меню, щоб уникнути помилок TypeScript
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: (isOpen: boolean) => void;
 }
 
 export default function AdminSidebar({
   user,
   activeTab,
   onTabChange,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
 }: AdminSidebarProps) {
+  // Функція для зміни вкладки з автоматичним закриттям мобільного меню
+  const handleTabChange = (tabId: string) => {
+    onTabChange(tabId);
+    if (setIsMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
   return (
-    <div className="w-72 h-screen flex flex-col bg-gradient-to-b from-pink-50 to-white border-r border-pink-100 p-6 sticky top-0">
+    <div
+      className={`w-72 h-screen flex flex-col bg-gradient-to-b from-pink-50 to-white border-r border-pink-100 p-6 fixed lg:sticky top-0 z-50 transition-transform duration-300 ${
+        isMobileMenuOpen
+          ? "translate-x-0"
+          : "-translate-x-full lg:translate-x-0"
+      }`}
+    >
       <div className="flex items-center gap-3 px-2 mb-10">
         <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-pink-200">
           <Sparkles className="text-white w-6 h-6" />
@@ -80,7 +102,7 @@ export default function AdminSidebar({
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleTabChange(item.id)}
               className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                 isActive
                   ? "bg-white shadow-md shadow-pink-100 text-pink-600 border border-pink-50"
