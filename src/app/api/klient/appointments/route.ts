@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-// Імпортуємо функцію сповіщень
 import { sendAppointmentUpdateNotification } from "@/settings/telegram/actions";
 
 export async function POST(request: Request) {
@@ -9,7 +8,7 @@ export async function POST(request: Request) {
 
     const {
       serviceId,
-      masterUserId,
+      masterUserId, // Це ID, який прийшов з фронтенда
       clientId,
       dateTime,
       extraOptionIds,
@@ -17,13 +16,30 @@ export async function POST(request: Request) {
       totalDuration,
     } = body;
 
-    const masterProfile = await prisma.masterProfile.findUnique({
+    // КРОК 1: Логування для відладки (побачиш у консолі Vercel)
+    console.log("DEBUG: Спроба запису до майстра з ID:", masterUserId);
+
+    // КРОК 2: Подвійна перевірка профілю (Правило №46)
+    // Спочатку шукаємо за userId, якщо не знайшли — шукаємо за id самого профілю
+    let masterProfile = await prisma.masterProfile.findUnique({
       where: { userId: masterUserId },
     });
 
     if (!masterProfile) {
+      masterProfile = await prisma.masterProfile.findUnique({
+        where: { id: masterUserId },
+      });
+    }
+
+    // Якщо після обох перевірок порожньо — профілю реально немає в базі
+    if (!masterProfile) {
+      console.error(
+        `ERROR: Профіль майстра не знайдено для ID: ${masterUserId}`,
+      );
       return NextResponse.json(
-        { error: "Профіль майстра не знайдено" },
+        {
+          error: `Профіль майстра не знайдено. Перевірте базу даних для ID: ${masterUserId}`,
+        },
         { status: 404 },
       );
     }
@@ -33,6 +49,7 @@ export async function POST(request: Request) {
       startDateTime.getTime() + totalDuration * 60000,
     );
 
+    // КРОК 3: Перевірка накладок
     const overlappingAppointment = await prisma.appointment.findFirst({
       where: {
         masterId: masterProfile.id,
@@ -51,10 +68,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // КРОК 4: Створення запису
     const appointment = await prisma.appointment.create({
       data: {
         clientId,
-        masterId: masterProfile.id,
+        masterId: masterProfile.id, // Використовуємо знайдений id профілю
         serviceId,
         dateTime: startDateTime,
         endTime: endDateTime,
@@ -68,14 +86,14 @@ export async function POST(request: Request) {
       },
     });
 
-    // НАДСИЛАЄМО СПОВІЩЕННЯ ПРО НОВИЙ ЗАПИС
+    // КРОК 5: Сповіщення
     await sendAppointmentUpdateNotification(appointment.id, "CREATED");
 
     return NextResponse.json(appointment);
   } catch (error) {
-    console.error(error);
+    console.error("CRITICAL POST ERROR:", error);
     return NextResponse.json(
-      { error: "Помилка створення запису" },
+      { error: "Помилка сервера при створенні запису" },
       { status: 500 },
     );
   }
