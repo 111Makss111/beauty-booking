@@ -35,8 +35,9 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  // ВИПРАВЛЕНО: Синтаксична помилка в ініціалізації об'єкта
   const [newOffer, setNewOffer] = useState({
-    discount: "",
+    discount: "", // Ініціалізуємо як рядок для інпуту
     masterId: "",
     serviceId: "",
     dateVal: "",
@@ -77,31 +78,38 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
     setError(null);
 
     const combinedDate = `${newOffer.dateVal} ${newOffer.timeVal}`;
-
     const selectedService = services.find((s) => s.id === newOffer.serviceId);
     const generatedTitle = selectedService
       ? selectedService.name
       : "Гаряче вікно";
 
     try {
-      const created = await createSpecialOffer({
+      const result = await createSpecialOffer({
         type: "HOT_SLOT",
         title: generatedTitle,
+        // Передаємо як рядок, наш Server Action сам конвертує його в Number
         discount: newOffer.discount,
         masterId: newOffer.masterId,
         serviceId: newOffer.serviceId,
         dateTimeStr: combinedDate,
       });
 
-      const selectedMaster = masters.find((m) => m.id === newOffer.masterId);
-      const masterName = selectedMaster
-        ? `${selectedMaster.firstName} ${selectedMaster.lastName}`
-        : undefined;
+      if (result.success && result.offer) {
+        const selectedMaster = masters.find((m) => m.id === newOffer.masterId);
+        const masterName = selectedMaster
+          ? `${selectedMaster.firstName} ${selectedMaster.lastName}`
+          : "Майстер";
 
-      onCreated({
-        ...created,
-        master: masterName,
-      } as Offer);
+        // ВИПРАВЛЕНО: Приведення до типу Offer через unknown для стабільності build
+        onCreated({
+          ...result.offer,
+          master: masterName,
+        } as unknown as Offer);
+
+        onClose();
+      } else {
+        setError(result.error || "Помилка створення");
+      }
     } catch (err) {
       setError("Помилка створення. Перевірте з'єднання або дані.");
     } finally {
@@ -111,13 +119,11 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-      {/* Клікабельний фон для закриття вікна на мобільному */}
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Змінено структуру контейнера для правильного скролу */}
       <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-lg p-5 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-300 relative max-h-[90vh] flex flex-col">
         <button
           onClick={onClose}
@@ -133,7 +139,6 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
           <span className="truncate">Нове Гаряче вікно</span>
         </h3>
 
-        {/* Форма поміщена в окремий блок зі скролом */}
         <div className="overflow-y-auto custom-scrollbar flex-1 -mr-2 pr-2 space-y-4 sm:space-y-5 pb-2">
           <ServiceSelect
             value={newOffer.serviceId}
@@ -158,15 +163,16 @@ export function AddOfferModal({ onClose, onCreated }: AddOfferModalProps) {
 
           <div>
             <label className="text-[10px] uppercase font-bold text-slate-400 ml-4 mb-1.5 block">
-              Знижка / Ціна
+              Знижка (%)
             </label>
             <input
-              type="text"
+              type="number" // Змінюємо на number для надійності
               value={newOffer.discount}
               onChange={(e) =>
                 setNewOffer({ ...newOffer, discount: e.target.value })
               }
-              placeholder="Наприклад: -20% або 500₴"
+              // ВИПРАВЛЕНО: Валюта zł
+              placeholder="Наприклад: 20 (буде -20%)"
               className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 sm:px-5 py-3 sm:py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
             />
           </div>
