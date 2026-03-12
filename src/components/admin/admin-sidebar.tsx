@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   X,
+  Star, // ДОДАЛИ ІКОНКУ РЕЙТИНГУ
 } from "lucide-react";
 
 // Додали ролі до кожного пункту меню
@@ -34,6 +35,13 @@ const menuItems = [
     name: "Повідомлення",
     icon: MessageSquare,
     roles: ["ADMIN", "MASTER"],
+  },
+  // ДОДАЛИ ВІДГУКИ ТІЛЬКИ ДЛЯ АДМІНА
+  {
+    id: "reviews",
+    name: "Відгуки",
+    icon: Star,
+    roles: ["ADMIN"],
   },
   { id: "masters", name: "Майстри", icon: Users, roles: ["ADMIN"] },
   { id: "services", name: "Послуги", icon: Sparkles, roles: ["ADMIN"] },
