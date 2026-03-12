@@ -101,12 +101,12 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       overview: "Панель керування",
       appointments: "Записи",
       requests: "Заявки",
+      reviews: "Відгуки",
       messages: "Повідомлення",
       masters: "Майстри",
       services: "Послуги",
       profile: "Мій профіль",
       settings: "Налаштування",
-      reviews: "Відгуки", // ДОДАНО заголовок для хедера
     };
     return titles[activeTab] || "Кабінет";
   };
