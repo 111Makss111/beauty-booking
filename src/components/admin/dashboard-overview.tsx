@@ -55,7 +55,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             {user.role === "ADMIN" ? (
               <AdminAppointments />
             ) : (
-              <MasterAppointments userId={user.id} />
+              <MasterAppointments />
             )}
           </div>
         );
@@ -64,7 +64,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       case "appointments":
         return (
           <div className="h-[calc(100vh-160px)]">
-            <MasterAppointments userId={user.id} />
+            <MasterAppointments />
           </div>
         );
 
