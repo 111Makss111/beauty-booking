@@ -2,11 +2,12 @@
 
 import { Flame, Percent, Trash2, User, Calendar, Sparkles } from "lucide-react";
 
+// ВИПРАВЛЕНО: discount тепер number, щоб відповідати схемі бази даних
 export interface Offer {
   id: string;
   type: "GLOBAL" | "HOT_SLOT";
   title: string;
-  discount: string;
+  discount: number;
   master?:
     | {
         user?: {
@@ -104,8 +105,9 @@ export function OfferCard({ offer, onRemove }: OfferCardProps) {
             </div>
           )}
         </div>
+        {/* ВИПРАВЛЕНО: Відображення знижки як відсоток */}
         <div className="text-xl font-black text-slate-800 shrink-0 bg-white/60 px-2.5 py-1 rounded-xl">
-          {offer.discount}
+          -{offer.discount}%
         </div>
       </div>
     </div>
