@@ -141,7 +141,7 @@ model Review {
 }
 
 model SalonSettings {
-  id                  String       @id @default("default")
+  id       String @id @default("general_config")
   allowWeekendBooking Boolean      @default(false)
   bookingInterval     Int          @default(30)
   maxBookingDays      Int          @default(30)
@@ -149,6 +149,7 @@ model SalonSettings {
   telegramBotActive   Boolean      @default(false)
   workingDays         WorkingDay[]
   updatedAt           DateTime     @updatedAt
+  schedule Json   @default("{}")
 }
 
 model WorkingDay {

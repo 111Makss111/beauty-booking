@@ -8,13 +8,14 @@ import { generateTelegramLink, sendMessage } from "./telegram-logic";
 
 const SYSTEM_SALON_EMAIL = "info@beautynails.com";
 
+// 1. ЗАБЕЗПЕЧЕННЯ СИСТЕМНОГО КОРИСТУВАЧА
 async function ensureSystemUser() {
-  let systemUser = await prisma.user.findUnique({
+  const systemUser = await prisma.user.findUnique({
     where: { email: SYSTEM_SALON_EMAIL },
   });
 
   if (!systemUser) {
-    systemUser = await prisma.user.create({
+    return await prisma.user.create({
       data: {
         email: SYSTEM_SALON_EMAIL,
         firstName: "Beauty",
@@ -28,14 +29,23 @@ async function ensureSystemUser() {
   return systemUser;
 }
 
+// 2. ОТРИМАННЯ СТАТУСУ ТА КІЛЬКОСТІ КЛІЄНТІВ
 export async function getTelegramData() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true, telegramUsername: true, telegramChatId: true },
-  });
+  const [user, clientsCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, telegramUsername: true, telegramChatId: true },
+    }),
+    prisma.user.count({
+      where: {
+        role: "CLIENT",
+        telegramChatId: { not: null },
+      },
+    }),
+  ]);
 
   if (!user) return null;
   const link = await generateTelegramLink(user.id);
@@ -44,9 +54,11 @@ export async function getTelegramData() {
     isConnected: !!user.telegramChatId,
     username: user.telegramUsername,
     link: link,
+    clientsCount: clientsCount,
   };
 }
 
+// 3. ВІДКЛЮЧЕННЯ ТЕЛЕГРАМ
 export async function disconnectTelegram() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return { error: "Не авторизовано" };
@@ -60,6 +72,7 @@ export async function disconnectTelegram() {
   return { success: true };
 }
 
+// 4. ШВИДКА РОЗСИЛКА (ВИПРАВЛЕНО БЕЗ ANY ТА БЕЗ ДУБЛЮВАННЯ КЛЮЧІВ)
 export async function sendBroadcastToClients(text: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email || session.user.role !== "ADMIN") {
@@ -70,7 +83,6 @@ export async function sendBroadcastToClients(text: string) {
     const clients = await prisma.user.findMany({
       where: {
         role: "CLIENT",
-        notifyPromotions: true,
         AND: [
           { telegramChatId: { not: null } },
           { telegramChatId: { not: "" } },
@@ -91,18 +103,40 @@ export async function sendBroadcastToClients(text: string) {
           data: { text, senderId: salon.id, receiverId: client.id },
         });
       } catch (e) {
-        console.error(e);
+        console.error(`Error sending to ${client.id}:`, e);
       }
     });
 
     await Promise.allSettled(sendPromises);
     return { success: true, count: successCount };
   } catch (error) {
-    return { error: "Помилка розсилки" };
+    console.error("Broadcast error:", error);
+    return { error: "Помилка розсилки на сервері" };
   }
 }
 
-// ДОДАНО СТАТУС COMPLETED
+// 5. ОНОВЛЕННЯ РОБОЧОГО ГРАФІКА (ЧИСТИЙ ПІДХІД)
+export async function updateWorkSchedule(scheduleData: unknown) {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role !== "ADMIN") return { error: "Немає прав" };
+
+  try {
+    // Важливо: переконайся, що модель SalonSettings додана в schema.prisma
+    await prisma.salonSettings.upsert({
+      where: { id: "general_config" },
+      update: { schedule: scheduleData as object },
+      create: { id: "general_config", schedule: scheduleData as object },
+    });
+
+    revalidatePath("/dashboard/settings");
+    return { success: true };
+  } catch (error) {
+    console.error("Schedule update error:", error);
+    return { error: "Помилка збереження графіка" };
+  }
+}
+
+// 6. СПОВІЩЕННЯ ПРО ЗАПИСИ (ПОВНИЙ ФУНКЦІОНАЛ)
 export async function sendAppointmentUpdateNotification(
   appointmentId: string,
   type: "CREATED" | "CONFIRMED" | "CANCELLED" | "COMPLETED",
@@ -134,18 +168,14 @@ export async function sendAppointmentUpdateNotification(
     const clientPhone = app.client?.phone || "Не вказано";
 
     if (type === "CREATED") {
-      const masterMessage = `🔥 *Новий запис (Очікує підтвердження)!*\n\n👤 *Клієнт:* ${clientName}\n📞 *Телефон:* ${clientPhone}\n💅 *Послуга:* ${app.service.name}\n🗓 *Коли:* ${date} о ${time}\n\n⏳ Будь ласка, зайдіть у кабінет та підтвердіть візит.`;
-
-      if (app.master?.user?.telegramChatId) {
+      const masterMessage = `🔥 *Новий запис!*\n\n👤 *Клієнт:* ${clientName}\n📞 *Телефон:* ${clientPhone}\n💅 *Послуга:* ${app.service.name}\n🗓 *Коли:* ${date} о ${time}\n\n⏳ Будь ласка, підтвердіть візит у кабінеті.`;
+      if (app.master?.user?.telegramChatId)
         await sendMessage(app.master.user.telegramChatId, masterMessage);
-      }
     } else if (type === "CONFIRMED") {
-      const clientMessage = `🎉 *Ваш запис підтверджено!*\n\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date}\n⏰ *Час:* ${time}\n👩‍🎨 *Майстер:* ${masterName}\n\n📍 Чекаємо на Вас у *Beauty Nails*! Якщо ваші плани зміняться, будь ласка, попередьте нас заздалегідь. 🌸`;
-
+      const clientMessage = `🎉 *Ваш запис підтверджено!*\n\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date}\n⏰ *Час:* ${time}\n👩‍🎨 *Майстер:* ${masterName}\n\n📍 Чекаємо на Вас у *Beauty Nails*! 🌸`;
       if (app.client?.telegramChatId && app.client?.notifyAppointments) {
         await sendMessage(app.client.telegramChatId, clientMessage);
       }
-
       await prisma.message.create({
         data: {
           text: clientMessage.replace(/\*/g, ""),
@@ -155,11 +185,9 @@ export async function sendAppointmentUpdateNotification(
       });
     } else if (type === "CANCELLED") {
       const clientMessage = `😔 *Запис скасовано*\n\nВаш візит на *${date}* о *${time}* було скасовано. Будемо раді бачити Вас іншого разу! 🌸`;
-
       if (app.client?.telegramChatId && app.client?.notifyAppointments) {
         await sendMessage(app.client.telegramChatId, clientMessage);
       }
-
       await prisma.message.create({
         data: {
           text: clientMessage.replace(/\*/g, ""),
@@ -168,20 +196,13 @@ export async function sendAppointmentUpdateNotification(
         },
       });
 
-      const masterCancelMsg = `⚠️ *Увага! Запис скасовано.*\n\nКлієнт *${clientName}* скасував свій візит.\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date} о ${time}\n\nУ вас звільнилося вікно.`;
-
-      if (app.master?.user?.telegramChatId) {
+      const masterCancelMsg = `⚠️ *Увага! Запис скасовано.*\n\nКлієнт *${clientName}* скасував свій візит.\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date} о ${time}`;
+      if (app.master?.user?.telegramChatId)
         await sendMessage(app.master.user.telegramChatId, masterCancelMsg);
-      }
-    }
-    // НОВА ЛОГІКА ДЛЯ РЕЙТИНГУ (Кнопки в Telegram)
-    else if (type === "COMPLETED") {
+    } else if (type === "COMPLETED") {
       const clientMessage = `🌸 *Дякуємо за візит!*\n\nЯк вам робота майстра *${masterName}*? Оцініть, будь ласка, від 1 до 5 зірочок:`;
-
       if (app.client?.telegramChatId && app.client?.notifyAppointments) {
         const token = process.env.TELEGRAM_BOT_TOKEN;
-
-        // Формуємо клавіатуру. callback_data містить ID запису та оцінку.
         const replyMarkup = {
           inline_keyboard: [
             [
@@ -193,25 +214,19 @@ export async function sendAppointmentUpdateNotification(
             ],
           ],
         };
-
-        // Робимо прямий запит до Telegram API, щоб передати reply_markup
-        try {
-          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: app.client.telegramChatId,
-              text: clientMessage,
-              parse_mode: "Markdown",
-              reply_markup: replyMarkup,
-            }),
-          });
-        } catch (e) {
-          console.error("Помилка відправки кнопок рейтингу", e);
-        }
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: app.client.telegramChatId,
+            text: clientMessage,
+            parse_mode: "Markdown",
+            reply_markup: replyMarkup,
+          }),
+        });
       }
     }
   } catch (error) {
-    console.error("Помилка відправки сповіщення:", error);
+    console.error("Notification error:", error);
   }
 }
