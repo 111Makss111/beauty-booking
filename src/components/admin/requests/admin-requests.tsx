@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import {
   Loader2,
   User,
-  Clock,
+  Clock, // залишив, хоч і не використовується в JSX, щоб не зламати твої імпорти
   CheckCircle2,
   XCircle,
   BellRing,
   Phone,
 } from "lucide-react";
+
+// ДОДАНО: Імпортуємо наш правильний Server Action
+import { updateAppointmentStatus } from "@/actions/appointments";
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
@@ -59,16 +62,15 @@ export default function AdminRequests() {
   ) => {
     setProcessingId(appointmentId);
     try {
-      const res = await fetch("/api/master/appointments/status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId, status: newStatus }),
-      });
+      // ЗМІНЕНО: Використовуємо Server Action замість старого fetch (Правило №105)
+      // Це автоматично запустить нашу логіку сповіщень для Клієнта і Майстра!
+      const res = await updateAppointmentStatus(appointmentId, newStatus);
 
-      if (res.ok) {
+      if (res.success) {
+        // Якщо успішно, прибираємо заявку зі списку
         setRequests((prev) => prev.filter((req) => req.id !== appointmentId));
       } else {
-        alert("Помилка оновлення статусу");
+        alert(res.error || "Помилка оновлення статусу");
       }
     } catch (error) {
       console.error(error);
