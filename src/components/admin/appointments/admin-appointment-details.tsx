@@ -12,12 +12,12 @@ import {
   User,
   Send,
   MessageSquare,
-  Loader2, // Додано іконку завантаження
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { sendSystemMessage } from "@/messages/actions";
-// Правило №21: Використовуємо наш новий екшен
 import { updateAppointmentStatus } from "@/actions/appointments";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
@@ -57,7 +57,6 @@ export default function AdminAppointmentDetails({
 }: AdminAppointmentDetailsProps) {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [isSending, setIsSending] = useState(false);
-  // Правило №62: Додано стан для оновлення статусу
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   if (!appointment) {
@@ -139,7 +138,6 @@ export default function AdminAppointmentDetails({
     }
   };
 
-  // Правило №19: Окрема функція для зміни статусу
   const handleStatusUpdate = async (newStatus: AppointmentStatus) => {
     setIsUpdatingStatus(true);
 
@@ -150,7 +148,6 @@ export default function AdminAppointmentDetails({
         toast.success(
           `Статус змінено на "${getStatusText(newStatus)}" та відправлено сповіщення!`,
         );
-        // Зверни увагу: revalidatePath в Server Action автоматично оновить дані компонента
       } else {
         toast.error(result.error || "Не вдалося оновити статус");
       }
@@ -181,7 +178,7 @@ export default function AdminAppointmentDetails({
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-        {/* БЛОК КЛІЄНТА */}
+        {/* КЛІЄНТ */}
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-slate-100 overflow-hidden shrink-0 border-2 border-white shadow-sm">
             {appointment.client.image ? (
@@ -198,17 +195,11 @@ export default function AdminAppointmentDetails({
             <h4 className="text-lg font-bold text-slate-800">
               {appointment.client.firstName} {appointment.client.lastName}
             </h4>
-
-            {appointment.client.phone ? (
+            {appointment.client.phone && (
               <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5 mt-1">
                 <Phone className="w-3.5 h-3.5" /> {appointment.client.phone}
               </p>
-            ) : (
-              <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5 mt-1 italic">
-                <Phone className="w-3.5 h-3.5 opacity-50" /> Номер відсутній
-              </p>
             )}
-
             <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5 mt-0.5">
               <Mail className="w-3.5 h-3.5" />{" "}
               {appointment.client.email || "Немає email"}
@@ -216,7 +207,7 @@ export default function AdminAppointmentDetails({
           </div>
         </div>
 
-        {/* БЛОК ПОСЛУГИ */}
+        {/* ПОСЛУГА ТА ЦІНА */}
         <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-4 flex flex-col gap-3">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-500 flex items-center justify-center shrink-0">
@@ -234,7 +225,8 @@ export default function AdminAppointmentDetails({
                 <span className="text-slate-300">|</span>
                 <span className="flex items-center gap-1">
                   <CreditCard className="w-3.5 h-3.5" />{" "}
-                  {appointment.totalPrice} ₴
+                  {/* ВИПРАВЛЕНО: Використання formatPrice */}
+                  {formatPrice(appointment.totalPrice)}
                 </span>
               </div>
             </div>
@@ -258,7 +250,7 @@ export default function AdminAppointmentDetails({
           </div>
         </div>
 
-        {/* СТАТУС ТА КНОПКИ КЕРУВАННЯ */}
+        {/* СТАТУС ТА КЕРУВАННЯ */}
         <div className="flex flex-col gap-3">
           <div
             className={`flex items-center justify-between px-4 py-3 rounded-xl border ${getStatusColor(
@@ -274,7 +266,6 @@ export default function AdminAppointmentDetails({
             )}
           </div>
 
-          {/* Правило №26: Умови читаються легко (відображаємо кнопки залежно від статусу) */}
           <div className="flex items-center gap-2">
             {appointment.status === "PENDING" && (
               <button
@@ -321,7 +312,7 @@ export default function AdminAppointmentDetails({
           </div>
         )}
 
-        {/* СИСТЕМНЕ ПОВІДОМЛЕННЯ В ЧАТ */}
+        {/* ПОВІДОМЛЕННЯ */}
         <div className="p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4 bg-white">
           <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
             <MessageSquare className="w-4 h-4 text-pink-500" /> Надіслати
@@ -347,10 +338,10 @@ export default function AdminAppointmentDetails({
             <button
               onClick={handleSendMessage}
               disabled={!selectedTemplate || isSending}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-pink-500 text-white font-bold text-sm hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-pink-200"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-pink-500 text-white font-bold text-sm hover:bg-pink-600 transition-colors disabled:opacity-50 shadow-md shadow-pink-200"
             >
               {isSending ? (
-                <Clock className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
               )}

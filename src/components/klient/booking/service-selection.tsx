@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ImageIcon, Loader2, Clock, Euro } from "lucide-react";
+import { ImageIcon, Loader2, Clock } from "lucide-react";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 interface Service {
   id: string;
@@ -23,7 +24,6 @@ export default function ServiceSelection({
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Завантажуємо послуги з нашого API
   useEffect(() => {
     async function fetchServices() {
       try {
@@ -73,7 +73,6 @@ export default function ServiceSelection({
                   : "bg-white border-slate-100 hover:border-pink-100 hover:shadow-md"
               }`}
             >
-              {/* Фото послуги або іконка-заглушка */}
               <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center">
                 {service.image ? (
                   <img
@@ -86,7 +85,6 @@ export default function ServiceSelection({
                 )}
               </div>
 
-              {/* Текстова інформація */}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-700 text-sm leading-tight mb-1 truncate">
                   {service.name}
@@ -98,14 +96,13 @@ export default function ServiceSelection({
                       {service.duration} хв
                     </span>
                   </div>
-                  <div className="flex items-center gap-0.5 text-pink-500 font-black">
-                    <span className="text-[11px]">€</span>
-                    <span className="text-xs">{service.price}</span>
+                  {/* ВИПРАВЛЕНО: Використання formatPrice для злотих */}
+                  <div className="text-pink-500 font-black text-xs">
+                    {formatPrice(service.price)}
                   </div>
                 </div>
               </div>
 
-              {/* Кастомний радіо-індикатор */}
               <div
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                   selectedServiceId === service.id

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   MoreHorizontal,
   Edit2,
@@ -9,8 +9,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Clock,
-  Euro,
 } from "lucide-react";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 interface Service {
   id: string;
@@ -44,7 +44,7 @@ export default function ServicesTable({
           setServices(data);
         }
       } catch (error) {
-        console.error(error);
+        console.error("Помилка завантаження послуг:", error);
       } finally {
         setIsLoading(false);
       }
@@ -67,11 +67,14 @@ export default function ServicesTable({
         service.id === id ? { ...service, isActive: !currentStatus } : service,
       ),
     );
+    // Тут варто додати запит до API для збереження статусу
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Видалити цю послугу?")) return;
     setServices((prev) => prev.filter((service) => service.id !== id));
     setOpenDropdownId(null);
+    // Додай fetch(..., { method: 'DELETE' }) за потреби
   };
 
   const toggleDropdown = (id: string) => {
@@ -133,7 +136,7 @@ export default function ServicesTable({
                 </div>
               </td>
 
-              {/* ТРИВАЛІСТЬ ТА ЦІНА (На мобілці в один рядок) */}
+              {/* ТРИВАЛІСТЬ ТА ЦІНА (Мобільна версія) */}
               <td className="block lg:table-cell py-1 lg:py-4 px-0 lg:px-4 text-slate-600">
                 <div className="flex lg:block items-center gap-4">
                   <div className="flex items-center gap-1.5 text-sm lg:text-base font-medium">
@@ -141,18 +144,19 @@ export default function ServicesTable({
                     {formatDuration(service.duration)}
                   </div>
                   <div className="lg:hidden w-1 h-1 bg-slate-200 rounded-full" />
+                  {/* ВИПРАВЛЕНО: Ціна для мобілки */}
                   <div className="flex lg:hidden items-center gap-1 text-pink-600 font-bold">
-                    €{service.price}
+                    {formatPrice(service.price)}
                   </div>
                 </div>
               </td>
 
-              {/* ЦІНА (Тільки для десктопа) */}
+              {/* ЦІНА (Десктоп) */}
               <td className="hidden lg:table-cell py-4 px-4 text-slate-700 font-bold">
-                €{service.price}
+                {formatPrice(service.price)}
               </td>
 
-              {/* СТАН (Перемикач) */}
+              {/* СТАН */}
               <td className="block lg:table-cell py-3 lg:py-4 px-0 lg:px-4">
                 <label className="flex items-center justify-between lg:justify-start gap-2 cursor-pointer w-full lg:w-max bg-slate-50 lg:bg-transparent p-2 lg:p-0 rounded-xl">
                   <span className="lg:hidden text-xs font-bold text-slate-500 pl-1">
@@ -184,7 +188,7 @@ export default function ServicesTable({
                 </label>
               </td>
 
-              {/* КНОПКА МЕНЮ (Фіксована зверху справа на картці) */}
+              {/* МЕНЮ */}
               <td className="absolute lg:static top-4 right-4 py-0 lg:py-4 px-0 lg:px-4 text-right">
                 <button
                   onClick={() => toggleDropdown(service.id)}

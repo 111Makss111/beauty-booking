@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Loader2, X } from "lucide-react";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо нашу утиліту
 
 interface ExtraOption {
   id: string;
@@ -154,8 +155,9 @@ export default function ExtraOptionsManager() {
               <h3 className="font-bold text-slate-800 line-clamp-2">
                 {option.name}
               </h3>
-              <div className="flex items-center gap-1 bg-pink-50 text-pink-600 px-2 py-1 rounded-lg font-black text-sm">
-                €{option.price}
+              {/* ВИКОРИСТОВУЄМО ФОРМАТУВАННЯ ТУТ */}
+              <div className="flex items-center gap-1 bg-pink-50 text-pink-600 px-3 py-1 rounded-lg font-black text-sm">
+                {formatPrice(option.price)}
               </div>
             </div>
 
@@ -234,7 +236,7 @@ export default function ExtraOptionsManager() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Ціна (€)
+                    Ціна (zł)
                   </label>
                   <input
                     type="number"

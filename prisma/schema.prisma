@@ -50,6 +50,7 @@ model User {
   masterProfile      MasterProfile?
   appointments       Appointment[]     @relation("ClientAppointments")
   expectingReviewFor String?
+  bonusBalance Float @default(0)
 }
 
 model PasswordResetToken {
@@ -166,11 +167,11 @@ model WorkingDay {
 
 model SpecialOffer {
   id        String    @id @default(cuid())
-  type      OfferType @default(GLOBAL)
+  type      OfferType @default(GLOBAL) // GLOBAL або HOT_SLOT
   title     String
-  discount  String
+  discount  Float     // Знижка у відсотках (наприклад, 20.0 для 20%)
   isActive  Boolean   @default(true)
-  dateTime  DateTime?
+  dateTime  DateTime? // Для HOT_SLOT: конкретна дата і час візиту
   masterId  String?
   master    MasterProfile? @relation(fields: [masterId], references: [id])
   serviceId String?

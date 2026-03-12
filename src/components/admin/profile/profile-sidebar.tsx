@@ -19,35 +19,6 @@ interface ProfileSidebarProps {
 export default function ProfileSidebar({ user }: ProfileSidebarProps) {
   return (
     <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-8 duration-500 h-full">
-      <div className="bg-white/70 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-6">
-        <h3 className="text-base font-bold text-slate-800 mb-4">
-          Швидка статистика
-        </h3>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-slate-500">
-              <div className="p-2 bg-pink-50 rounded-lg text-pink-500">
-                <Users className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium">Клієнти</span>
-            </div>
-            <span className="font-bold text-slate-800">245</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-slate-500">
-              <div className="p-2 bg-amber-50 rounded-lg text-amber-500">
-                <Star className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium">Середній рейтинг</span>
-            </div>
-            <div className="flex items-center gap-1 font-bold text-slate-800">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              4.9
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-white/70 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-6 flex-1">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold text-slate-800">Кращі майстри</h3>

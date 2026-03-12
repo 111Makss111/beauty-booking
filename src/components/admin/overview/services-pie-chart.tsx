@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 interface ServicesPieChartProps {
   data: { name: string; value: number }[];
@@ -22,7 +23,7 @@ export default function ServicesPieChart({ data }: ServicesPieChartProps) {
         Популярні послуги
       </h3>
       <p className="text-xs font-medium text-slate-400 mb-4">
-        За доходом (поточний місяць)
+        За доходом (обраний період)
       </p>
 
       <div className="flex-1 w-full relative">
@@ -43,7 +44,7 @@ export default function ServicesPieChart({ data }: ServicesPieChartProps) {
                 dataKey="value"
                 stroke="none"
               >
-                {data.map((entry, index) => (
+                {data.map((_, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
@@ -51,7 +52,6 @@ export default function ServicesPieChart({ data }: ServicesPieChartProps) {
                 ))}
               </Pie>
               <Tooltip
-                // ВИПРАВЛЕНО ТУТ: Безпечний тип
                 formatter={(
                   value:
                     | string
@@ -59,8 +59,11 @@ export default function ServicesPieChart({ data }: ServicesPieChartProps) {
                     | readonly (string | number)[]
                     | undefined,
                 ) => {
-                  const safeValue = Array.isArray(value) ? value[0] : value;
-                  return [`${safeValue ?? 0} ₴`, "Дохід"];
+                  // Перетворюємо у число для утиліти
+                  const numericValue = Array.isArray(value)
+                    ? Number(value[0])
+                    : Number(value);
+                  return [formatPrice(numericValue || 0), "Дохід"];
                 }}
                 contentStyle={{
                   borderRadius: "1rem",

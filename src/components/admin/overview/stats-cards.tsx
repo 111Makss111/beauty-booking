@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Wallet,
   TrendingUp,
@@ -5,6 +7,7 @@ import {
   CalendarClock,
   LucideIcon,
 } from "lucide-react";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо нашу утиліту
 
 interface StatsCardsProps {
   todayRevenue: number;
@@ -19,36 +22,32 @@ export default function StatsCards({
   pipelineRevenue,
   newClients,
 }: StatsCardsProps) {
-  const formatMoney = (val: number) =>
-    new Intl.NumberFormat("uk-UA", {
-      style: "currency",
-      currency: "UAH",
-      maximumFractionDigits: 0,
-    }).format(val);
+  // Видалено внутрішній formatMoney, тепер використовуємо глобальну утиліту
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <Card
         icon={Wallet}
-        title="Дохід (сьогодні)"
-        value={formatMoney(todayRevenue)}
+        title="Дохід (період)"
+        value={formatPrice(monthRevenue)} // monthRevenue тут фактично є сумою за період
         color="bg-pink-50 text-pink-500"
       />
       <Card
         icon={TrendingUp}
-        title="Дохід (місяць)"
-        value={formatMoney(monthRevenue)}
+        title="Середній чек"
+        // Розрахунок середнього чека для більшої інформативності
+        value={formatPrice(monthRevenue / (newClients || 1))}
         color="bg-rose-50 text-rose-500"
       />
       <Card
         icon={CalendarClock}
         title="Прогноз (очікується)"
-        value={formatMoney(pipelineRevenue)}
+        value={formatPrice(pipelineRevenue)}
         color="bg-purple-50 text-purple-500"
       />
       <Card
         icon={Users}
-        title="Нові клієнти (місяць)"
+        title="Нові клієнти"
         value={newClients.toString()}
         color="bg-blue-50 text-blue-500"
       />
@@ -71,11 +70,13 @@ function Card({ icon: Icon, title, value, color }: CardProps) {
       >
         <Icon className="w-7 h-7" />
       </div>
-      <div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+      <div className="min-w-0">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
           {title}
         </p>
-        <h3 className="text-2xl font-black text-slate-800">{value}</h3>
+        <h3 className="text-xl xl:text-2xl font-black text-slate-800 truncate">
+          {value}
+        </h3>
       </div>
     </div>
   );

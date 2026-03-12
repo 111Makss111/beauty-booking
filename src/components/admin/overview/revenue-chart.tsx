@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 interface RevenueChartProps {
   data: { date: string; revenue: number }[];
@@ -18,7 +19,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
   return (
     <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-6 border border-white shadow-sm h-[350px] flex flex-col">
       <h3 className="text-lg font-bold text-slate-800 mb-6">
-        Динаміка доходів (останні 7 днів)
+        Динаміка доходів
       </h3>
       <div className="flex-1 w-full h-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -49,7 +50,6 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                 border: "none",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
-              // ВИПРАВЛЕНО ТУТ: Додано повний тип, який вимагає recharts
               formatter={(
                 value:
                   | string
@@ -57,9 +57,13 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                   | readonly (string | number)[]
                   | undefined,
               ) => {
-                // Якщо recharts поверне масив, беремо перше значення
-                const safeValue = Array.isArray(value) ? value[0] : value;
-                return [`${safeValue ?? 0} ₴`, "Дохід"];
+                // Витягуємо чисте число
+                const numericValue = Array.isArray(value)
+                  ? Number(value[0])
+                  : Number(value);
+
+                // Використовуємо нашу утиліту для злотих (zł)
+                return [formatPrice(numericValue || 0), "Дохід"];
               }}
               labelStyle={{
                 color: "#64748b",

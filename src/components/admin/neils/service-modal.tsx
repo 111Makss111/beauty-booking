@@ -35,8 +35,23 @@ export default function ServiceModal({
   useEffect(() => {
     const fetchServiceData = async () => {
       if (serviceId) {
-        // Тут буде запит до API, поки імітуємо затримку
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        setIsLoading(true);
+        try {
+          const res = await fetch(`/api/admin/services/${serviceId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setFormData({
+              name: data.name,
+              duration: data.duration,
+              price: data.price,
+              image: data.image || "",
+            });
+          }
+        } catch (error) {
+          console.error("Помилка завантаження послуги:", error);
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setFormData({
           name: "",
@@ -110,6 +125,7 @@ export default function ServiceModal({
       window.location.reload();
     } catch (error) {
       console.error(error);
+      alert("Не вдалося зберегти послугу. Перевірте консоль.");
     } finally {
       setIsLoading(false);
     }
@@ -210,12 +226,13 @@ export default function ServiceModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Ціна (€)
+                  Ціна (zł)
                 </label>
                 <input
                   type="number"
                   required
                   min="0"
+                  step="0.01"
                   value={formData.price}
                   onChange={(e) =>
                     setFormData((p) => ({

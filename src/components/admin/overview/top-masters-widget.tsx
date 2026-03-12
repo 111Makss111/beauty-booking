@@ -1,4 +1,7 @@
+"use client";
+
 import { Star, User, Trophy } from "lucide-react";
+import { formatPrice } from "@/lib/utils/currency"; // Імпортуємо утиліту
 
 interface Master {
   id: string;
@@ -18,15 +21,13 @@ export default function TopMastersWidget({ masters }: TopMastersWidgetProps) {
     <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-6 border border-white shadow-sm flex flex-col h-full">
       <div className="flex items-center gap-2 mb-6">
         <Trophy className="w-5 h-5 text-amber-500" />
-        <h3 className="text-lg font-bold text-slate-800">
-          Топ майстрів місяця
-        </h3>
+        <h3 className="text-lg font-bold text-slate-800">Топ майстрів</h3>
       </div>
 
       <div className="flex-1 flex flex-col gap-4">
         {masters.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-4">
-            Ще немає даних за цей місяць
+            Немає даних за обраний період
           </p>
         ) : (
           masters.map((master, index) => (
@@ -65,8 +66,9 @@ export default function TopMastersWidget({ masters }: TopMastersWidgetProps) {
                 </div>
               </div>
               <div className="text-right shrink-0">
+                {/* ВИКОРИСТОВУЄМО formatPrice */}
                 <p className="text-sm font-black text-pink-500">
-                  {master.revenue} ₴
+                  {formatPrice(master.revenue)}
                 </p>
               </div>
             </div>
