@@ -13,6 +13,7 @@ export async function updateAppointmentStatus(
 ) {
   const session = await getServerSession(authOptions);
 
+  // Дозволяємо і ADMIN, і MASTER змінювати статуси
   if (
     !session?.user?.email ||
     (session.user.role !== "ADMIN" && session.user.role !== "MASTER")
@@ -26,8 +27,12 @@ export async function updateAppointmentStatus(
       data: { status: newStatus },
     });
 
-    // Універсальна функція тепер сама розбереться, кому і що слати (і клієнту, і майстру)
-    if (newStatus === "CONFIRMED" || newStatus === "CANCELLED") {
+    // ДОДАНО: 'COMPLETED' до умови відправки
+    if (
+      newStatus === "CONFIRMED" ||
+      newStatus === "CANCELLED" ||
+      newStatus === "COMPLETED"
+    ) {
       await sendAppointmentUpdateNotification(appointmentId, newStatus);
     }
 

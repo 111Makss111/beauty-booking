@@ -20,7 +20,7 @@ async function ensureSystemUser() {
         firstName: "Beauty",
         lastName: "Nails",
         role: "ADMIN",
-        emailVerified: true, // Boolean, як вимагає твоя схема
+        emailVerified: true,
         image: "/logo.png",
       },
     });
@@ -102,9 +102,10 @@ export async function sendBroadcastToClients(text: string) {
   }
 }
 
+// ДОДАНО СТАТУС COMPLETED
 export async function sendAppointmentUpdateNotification(
   appointmentId: string,
-  type: "CREATED" | "CONFIRMED" | "CANCELLED",
+  type: "CREATED" | "CONFIRMED" | "CANCELLED" | "COMPLETED",
 ) {
   try {
     const app = await prisma.appointment.findUnique({
@@ -128,8 +129,6 @@ export async function sendAppointmentUpdateNotification(
     });
 
     const salon = await ensureSystemUser();
-
-    // ЗАПОБІЖНИК: Безпечне отримання імен, щоб уникнути падіння коду (Правило №46)
     const masterName = app.master?.user?.firstName || "Майстра";
     const clientName = app.client?.firstName || "Клієнта";
     const clientPhone = app.client?.phone || "Не вказано";
@@ -155,7 +154,6 @@ export async function sendAppointmentUpdateNotification(
         },
       });
     } else if (type === "CANCELLED") {
-      // 1. Сповіщення клієнту
       const clientMessage = `😔 *Запис скасовано*\n\nВаш візит на *${date}* о *${time}* було скасовано. Будемо раді бачити Вас іншого разу! 🌸`;
 
       if (app.client?.telegramChatId && app.client?.notifyAppointments) {
@@ -170,11 +168,47 @@ export async function sendAppointmentUpdateNotification(
         },
       });
 
-      // 2. Сповіщення майстру про скасування
       const masterCancelMsg = `⚠️ *Увага! Запис скасовано.*\n\nКлієнт *${clientName}* скасував свій візит.\n💅 *Послуга:* ${app.service.name}\n🗓 *Дата:* ${date} о ${time}\n\nУ вас звільнилося вікно.`;
 
       if (app.master?.user?.telegramChatId) {
         await sendMessage(app.master.user.telegramChatId, masterCancelMsg);
+      }
+    }
+    // НОВА ЛОГІКА ДЛЯ РЕЙТИНГУ (Кнопки в Telegram)
+    else if (type === "COMPLETED") {
+      const clientMessage = `🌸 *Дякуємо за візит!*\n\nЯк вам робота майстра *${masterName}*? Оцініть, будь ласка, від 1 до 5 зірочок:`;
+
+      if (app.client?.telegramChatId && app.client?.notifyAppointments) {
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+
+        // Формуємо клавіатуру. callback_data містить ID запису та оцінку.
+        const replyMarkup = {
+          inline_keyboard: [
+            [
+              { text: "⭐️ 1", callback_data: `rate_${appointmentId}_1` },
+              { text: "⭐️ 2", callback_data: `rate_${appointmentId}_2` },
+              { text: "⭐️ 3", callback_data: `rate_${appointmentId}_3` },
+              { text: "⭐️ 4", callback_data: `rate_${appointmentId}_4` },
+              { text: "⭐️ 5", callback_data: `rate_${appointmentId}_5` },
+            ],
+          ],
+        };
+
+        // Робимо прямий запит до Telegram API, щоб передати reply_markup
+        try {
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: app.client.telegramChatId,
+              text: clientMessage,
+              parse_mode: "Markdown",
+              reply_markup: replyMarkup,
+            }),
+          });
+        } catch (e) {
+          console.error("Помилка відправки кнопок рейтингу", e);
+        }
       }
     }
   } catch (error) {

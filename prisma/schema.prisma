@@ -49,6 +49,7 @@ model User {
   receivedMessages   Message[]         @relation("ReceivedMessages")
   masterProfile      MasterProfile?
   appointments       Appointment[]     @relation("ClientAppointments")
+  expectingReviewFor String?
 }
 
 model PasswordResetToken {
@@ -136,6 +137,7 @@ model Review {
   appointmentId String      @unique
   appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
+  isVisible     Boolean     @default(true)
 }
 
 model SalonSettings {
