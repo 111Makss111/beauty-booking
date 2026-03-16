@@ -11,7 +11,6 @@ export default function BonusesCard() {
         <div className="relative w-24 h-24 bg-gradient-to-br from-pink-100 to-pink-50 rounded-2xl flex items-center justify-center text-5xl shadow-inner shadow-pink-200 border border-pink-100/50">
           🎁
         </div>
-
         <p className="text-sm text-slate-500 font-medium leading-relaxed px-2">
           Ви маєте <span className="font-bold text-pink-500 text-base">0</span>{" "}
           бонусних балів для використання на наступну послугу!
@@ -21,7 +20,6 @@ export default function BonusesCard() {
           Використати
         </button>
       </div>
-
       <div className="mt-auto pt-4">
         <button className="flex items-center justify-center gap-2 w-full py-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors font-medium text-sm border border-transparent hover:border-rose-100">
           <svg
